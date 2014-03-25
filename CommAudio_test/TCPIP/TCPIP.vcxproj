@@ -14,7 +14,7 @@
     <ProjectGuid>{15EB2A42-95FE-4764-AF2D-D4502EB28EF3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TCPIP</RootNamespace>
-    <ProjectName>CommAudio</ProjectName>
+    <ProjectName>CommAudio_test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -9,7 +9,7 @@
 #include <string.h>
 #include "atlstr.h"
 
-#define DATA_BUFSIZE 70000
+#define DATA_BUFSIZE 1024
 
 typedef struct _SOCKET_INFORMATION
 {
@@ -19,12 +19,13 @@ typedef struct _SOCKET_INFORMATION
 	WSAOVERLAPPED Overlapped;
 	DWORD BytesSEND;
 	DWORD BytesRECV;
+	SOCKADDR_IN SenderAddr;
 } SOCKET_INFORMATION, * LPSOCKET_INFORMATION;
 
 DWORD WINAPI UDPWorkerThread(LPVOID lpParameter);
 VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port);
-void run_client();
+void run_client(System::Windows::Forms::ListBox ^lb);
 
 namespace TCPIP 
 {
@@ -284,7 +285,7 @@ namespace TCPIP
 				 wcstombs_s(0, ip, wcslen(tempIP) + 1, tempIP, _TRUNCATE);
 
 				 multicast_connect(outputListBox, ip, port);
-				 run_client();
+				 run_client(outputListBox);
 			 }
 };
 }
