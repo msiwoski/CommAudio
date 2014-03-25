@@ -15,23 +15,41 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MyForm.cpp">
+    <ClCompile Include="main_menu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="server_menu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyForm.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="main_menu.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Variables.h">
+    <ClInclude Include="server_menu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="client_menu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="MyForm.resx">
+    <EmbeddedResource Include="main_menu.resx">
+      <Filter>Resource Files</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="client_menu.resx">
+      <Filter>Resource Files</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="server_menu.resx">
       <Filter>Resource Files</Filter>
     </EmbeddedResource>
   </ItemGroup>
