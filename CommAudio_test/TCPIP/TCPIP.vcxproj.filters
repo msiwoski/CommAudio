@@ -21,10 +21,10 @@
     <ClCompile Include="main_menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="server_menu.cpp">
+    <ClCompile Include="client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="client.cpp">
+    <ClCompile Include="server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

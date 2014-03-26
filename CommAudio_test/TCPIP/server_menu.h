@@ -7,23 +7,14 @@
 #include "atlstr.h"
 #include <string>
 
-#define DATA_BUFSIZE 70000
 #define FILE_SIZE 255
 
 #define PACKETSRECV_LISTBOX WM_APP+1
 #define BYTESRECV_LISTBOX   WM_APP+2
 #define STRING_LISTBOX      WM_APP+3
 
-/*typedef struct _SOCKET_INFORMATION 
-{
-	CHAR Buffer[DATA_BUFSIZE];
-	WSABUF DataBuf;
-	SOCKET Socket;
-	WSAOVERLAPPED Overlapped;
-	DWORD BytesSEND;
-	DWORD BytesRECV;
-} SOCKET_INFORMATION, * LPSOCKET_INFORMATION;*/
-
+void run_server();
+int init_server(int port);
 
 namespace TCPIP {
 
@@ -259,22 +250,15 @@ namespace TCPIP {
 			 }
 	private: System::Void ListenButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
-				 int port = 0;
 				 char fileName[128] = "";
 
 				 this->PortTextBox->Enabled = false;
 				 this->ListenButton->Enabled = false;
 				 this->CloseButton->Enabled = true;
 
-				 if(PortTextBox->Text != "")
-					 port = System::Int32::Parse(PortTextBox->Text);
-
 				 hwnd = static_cast<HWND>(Handle.ToPointer());
 
 				 backgroundWorker->RunWorkerAsync();
-				 UDPbackgroundWorker->RunWorkerAsync();
-
-				 port = 200;
 			 }
 	private: System::Void ClearButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
@@ -291,7 +275,8 @@ namespace TCPIP {
 				 if(PortTextBox->Text != "")
 					 port = System::Int32::Parse(PortTextBox->Text);
 
-				 //run_tcp_serv(hwnd, fileName, port);
+				 init_server(port);
+				 run_server();
 			 }
 	private: System::Void CloseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {

@@ -48,10 +48,12 @@ void run_client(System::Windows::Forms::ListBox ^lb)
 		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR*) &(SocketInfo->SenderAddr), &SenderAddrSize,
 			&(SocketInfo->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
 				if (WSAGetLastError() != WSA_IO_PENDING){
+					exit(1);
 					// error message
 				}
 		}
 		if (WSAWaitForMultipleEvents(1, &(SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
+			exit(1);
 			// error message
 		}
 		WSAResetEvent(SocketInfo->Overlapped.hEvent);
@@ -100,6 +102,7 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 
 	if (nRet == SOCKET_ERROR)
 	{
+		exit(0);
 		// error message
 	}
 
@@ -110,6 +113,7 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 
 	if (nRet == SOCKET_ERROR) 
 	{
+		exit(0);
 		// error message
 	}
 	return 0;

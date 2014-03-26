@@ -7,7 +7,6 @@
 #include <string.h>
 #include <time.h>
 #include <cstdio>
-//#include <ws2tcpip.h>
 
 #define DATA_BUFSIZE		1024
 #define PROTOCOL_TCP		0
@@ -15,6 +14,8 @@
 #define FILENAMELENGTH 		32
 #define TIMEOUT_TIME		3000
 #define TIMEOUT_TIME_UDP	3000
+#define TIMECAST_TTL		2
+#define TIMECAST_INTRVL		7
 
 typedef struct{
 	char fileName[FILENAMELENGTH];
@@ -36,6 +37,18 @@ typedef struct {
 	WSAOVERLAPPED SendOverlapped;
 	char* fileData;
 } GoodInfo;
+
+typedef struct _SOCKET_INFORMATION
+{
+	CHAR Buffer[DATA_BUFSIZE];
+	WSABUF DataBuf;
+	SOCKET Socket;
+	WSAOVERLAPPED Overlapped;
+	DWORD BytesSEND;
+	DWORD BytesRECV;
+	SOCKADDR_IN SenderAddr;
+	SOCKADDR_IN DestAddr;
+} SOCKET_INFORMATION, * LPSOCKET_INFORMATION;
 
 typedef struct {
 	WSADATA wsaData;	
