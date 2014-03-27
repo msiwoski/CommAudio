@@ -1,0 +1,532 @@
+	System::Void MyForm::MyForm_Load(System::Object^  sender, System::EventArgs^  e){
+	String^ errMsg = gcnew String("error");	
+	Series^ series = gcnew Series();
+	series->ChartArea = L"ChartArea1";
+	series->ChartType = System::Windows::Forms::DataVisualization::Charting::SeriesChartType::Line;
+	series->Legend = L"Legend";
+	series->Name = L"Control Packets";
+
+	for (int i = 0; i < 10; i++){
+	series->Points->AddXY(i,i+2);
+	series->Points->AddXY(i+4,i-3);
+	}
+	series->Points->AddXY(1, ctrlPkt.ctrlPktSize);
+	chart1->Series->Add(series);
+
+	if ((Ret = WSAStartup(0x0202,&wsaData)) != 0){
+	errMsg = "WSAStartup failed with error \n" + Ret;
+	MessageBox::Show(errMsg);
+	WSACleanup();
+	return;
+	}
+	}
+	System::Void MyForm::clientButton_Click(System::Object^  sender, System::EventArgs^  e){
+	receiveButton->Enabled = false;
+	sendButton->Enabled = true;
+	}
+	System::Void MyForm::serverButton_Click(System::Object^  sender, System::EventArgs^  e){
+
+	sendButton->Enabled = false;
+	receiveButton->Enabled = true;
+	}
+
+	System::Void MyForm::openButton_Click(System::Object^  sender, System::EventArgs^  e) {
+
+	openFileDialog1->Filter = "Text Files|*.txt|All Files|*.*";
+	Control_Packet* ctrlPkt = (Control_Packet*) malloc(sizeof(Control_Packet));
+	if(openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK ){
+	StreamReader^ sr = gcnew StreamReader(openFileDialog1->FileName);
+	//ctrlPkt->fileName = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(openFileDialog1->FileName->Substring(openFileDialog1->FileName->LastIndexOf('\\')+1));
+	bufferFile = (char*) malloc(4096);
+	bufferFile = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(sr->ReadToEnd());
+	}
+	}
+
+	System::Void MyForm::saveButton_Click(System::Object^  sender, System::EventArgs^  e) {
+	saveFileDialog1->Filter = "Text Files|*.txt|All Files|*.*";
+	if(saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK){
+
+
+	}
+	}
+
+
+	System::Void MyForm::receiveButton_Click(System::Object^  sender, System::EventArgs^  e){
+
+	portNum = (int) portNumberChooser->Value; 
+
+	//Initialize and set up address structure
+	pktPntlss = (PntlssInfo*) malloc(sizeof(PntlssInfo));
+	pktPntlss->pktsRcvd = 0;
+	Control_Packet* ctrlPkt = (Control_Packet*) malloc(sizeof(Control_Packet));
+	ctrlPkt->protocolType = (int) protocolTypeChooser->SelectedIndex;
+	memset((char *)&InternetAddr, 0, sizeof(struct sockaddr_in));
+
+	InternetAddr.sin_family = AF_INET;
+	InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	InternetAddr.sin_port = htons(portNum);
+
+	SenderAddr.sin_family = AF_INET;
+	SenderAddr.sin_port = htons(portNum);
+	SenderAddr.sin_addr.s_addr  = htonl(INADDR_ANY);
+
+	if (ctrlPkt->protocolType == PROTOCOL_TCP){
+	if ((ListenSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
+	errMsg = "Failed to get a socket \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	if (bind(ListenSocket, (PSOCKADDR) &InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR){
+	errMsg = "bind() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+
+	if (listen(ListenSocket, 5)){
+	errMsg = "listen() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	if ((ThreadHandle = CreateThread(NULL, 0, TCPWorkerThread, 0, 0, &ThreadId)) == NULL)
+	{
+	errMsg = "CreateThread failed with error \n" + GetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+
+	//TCPReceive(portNum);
+	} else{
+	if ((ListenSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
+	errMsg = "Failed to get a socket \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+
+	if (bind(ListenSocket, (PSOCKADDR) &InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR){
+	errMsg = "bind() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+
+	if ((ThreadHandle = CreateThread(NULL, 0, UDPWorkerThread, (LPVOID) AcceptEvent, 0, &ThreadId)) == NULL){
+	errMsg = "CreateThread failed with error \n" + GetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	}
+
+	}
+
+	void TCPReceive(int portNum){
+	String^ errMsg = gcnew String("error");
+	}
+	
+	DWORD WINAPI TCPWorkerThread(LPVOID lpParameter)
+	{
+	DWORD Flags = 0, RecvBytes = 0;
+	LPSOCKET_INFORMATION SocketInfo;
+	String^ errMsg = gcnew String("error");
+	String^ goodMsg = gcnew String("good job");
+	while(TRUE){
+	// Wait for accept() to signal an event and also process WorkerRoutine() returns.
+	AcceptSocket = WSAAccept(ListenSocket,NULL, NULL,NULL, NULL);
+	// Create a socket information structure to associate with the accepted socket.
+	if ((SocketInfo = (LPSOCKET_INFORMATION) GlobalAlloc(GPTR,sizeof(SOCKET_INFORMATION))) == NULL){
+	errMsg = "GlobalAlloc() failed with error " + GetLastError();
+	MessageBox::Show(errMsg);
+	return FALSE;
+	} 
+	// Fill in the details of our accepted socket.
+	SocketInfo->Socket = AcceptSocket;
+	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));  
+	SocketInfo->BytesSEND = 0;
+	SocketInfo->BytesRECV = 0;
+	SocketInfo->DataBuf.len = DATA_BUFSIZE;
+	SocketInfo->DataBuf.buf = (char*)malloc(DATA_BUFSIZE);
+	//Receive the Control Packet
+	if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
+	&(SocketInfo->Overlapped), TCPWorkerRoutine) == SOCKET_ERROR){
+	if (WSAGetLastError() != WSA_IO_PENDING){
+	errMsg = "WSARecv() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return FALSE;
+	}
+	}
+	}
+	return TRUE;
+	}
+	
+	
+	DWORD WINAPI UDPWorkerThread(LPVOID lpParameter){
+	DWORD Flags = 0, RecvBytes = 0;
+	LPSOCKET_INFORMATION SocketInfo;
+	String^ errMsg = gcnew String("error");
+	String^ goodMsg = gcnew String("good job");
+
+	int SenderAddrSize = sizeof (SenderAddr);
+	memset((char *)&SocketInfo, 0, sizeof(LPSOCKET_INFORMATION));
+	// Save the accept event in the event array.
+	// Create a socket information structure to associate with the accepted socket.
+	// Wait for accept() to signal an event and also process WorkerRoutine() returns.
+	// Create a socket information structure to associate with the accepted socket.
+	if ((SocketInfo = (LPSOCKET_INFORMATION) GlobalAlloc(GPTR,sizeof(SOCKET_INFORMATION))) == NULL){
+	errMsg = "GlobalAlloc() failed with error \n" + GetLastError();
+	MessageBox::Show(errMsg);
+	return FALSE;
+	}
+
+	// Fill in the details of our accepted socket.
+	SocketInfo->Socket = ListenSocket;
+	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));  
+	SocketInfo->BytesSEND = 0;
+	SocketInfo->BytesRECV = 0;
+	SocketInfo->DataBuf.len = DATA_BUFSIZE;
+	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
+
+	SocketInfo->Overlapped.hEvent = WSACreateEvent();
+
+	if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR*) &SenderAddr, &SenderAddrSize,
+	&(SocketInfo->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
+	if (WSAGetLastError() != WSA_IO_PENDING){
+	errMsg = "WSARecvFrom() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return FALSE;
+	}
+	}
+	WSAWaitForMultipleEvents(1, &(SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+	WSAResetEvent(SocketInfo->Overlapped.hEvent);
+
+	return TRUE;
+	}
+	
+	
+
+	void CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags)
+	{
+	DWORD RecvBytes;
+	DWORD Flags;
+	String^ errMsg = gcnew String("error");
+	// Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
+	LPSOCKET_INFORMATION SI = (LPSOCKET_INFORMATION) Overlapped;
+	struct sockaddr_in SenderAddr;
+	int SenderAddrSize = sizeof (SenderAddr);
+
+	if (Error != 0)
+	{
+	errMsg = "I/O operation failed with error \n" + Error;
+	MessageBox::Show(errMsg);
+	}
+
+	if (BytesTransferred == 0)
+	{
+	errMsg = "Closing socket \n" + SI->Socket;
+	MessageBox::Show(errMsg);
+	}
+
+	if (Error != 0 || BytesTransferred == 0)
+	{
+	closesocket(SI->Socket);
+	GlobalFree(SI);
+	return;
+	}
+
+	// Check to see if the BytesRECV field equals zero. If this is so, then
+	// this means a WSARecvFrom call just completed so update the BytesRECV field
+	// with the BytesTransferred value from the completed WSARecvFrom() call.
+
+	if (SI->BytesRECV == 0)
+	{
+	SI->BytesRECV = BytesTransferred;
+	SI->BytesSEND = 0;
+	}
+	else
+	{
+	SI->BytesSEND += BytesTransferred;
+	}
+	//don't need to do this check.
+	SI->BytesRECV = 0;
+	// Now that there are no more bytes to send post another WSARecv() request.
+	Flags = 0;
+	ZeroMemory(&(SI->Overlapped), sizeof(WSAOVERLAPPED));
+	SI->DataBuf.len = DATA_BUFSIZE;
+	SI->DataBuf.buf = SI->Buffer;
+
+	if (WSARecvFrom(SI->Socket, &(SI->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) &SenderAddr, &SenderAddrSize,
+	&(SI->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
+	if (WSAGetLastError() != WSA_IO_PENDING ){
+	errMsg = "WSARecvFrom() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	}
+	//}
+	}
+
+	
+
+	void CALLBACK TCPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags)
+	{
+	//DWORD RecvBytes;
+	DWORD Flags = 0;
+	String^ errMsg = gcnew String("error");
+	// Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
+	LPSOCKET_INFORMATION SI = (LPSOCKET_INFORMATION) Overlapped;
+	//Flags = 0;
+	//ZeroMemory(&(SI->Overlapped), sizeof(WSAOVERLAPPED));
+	//SI->DataBuf.len = DATA_BUFSIZE;
+
+	Control_Packet *pkt = (Control_Packet*)SI->DataBuf.buf;
+	pktPntlss->pktsRcvd++;
+	if (pktPntlss->pktsRcvd == pkt->numTimesSending){
+	MessageBox::Show("Received all the packets");
+	return;
+	}
+	//	for(int i = 0; i < pkt->numTimesSending; i++){
+	if (WSARecv(SI->Socket, &(SI->DataBuf), 1, NULL, &Flags,
+	&(SI->Overlapped), TCPWorkerRoutine) == SOCKET_ERROR)
+	{
+	if (WSAGetLastError() != WSA_IO_PENDING )
+	{
+	errMsg = "WSARecv() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	}
+
+	//prints out string from buffer
+	String^ str = gcnew System::String(SI->DataBuf.buf, 0, SI->DataBuf.len);
+	MessageBox::Show(str);
+	//}
+	}
+
+	void UDPReceive(int portNum){
+	String^ errMsg = gcnew String("error");
+
+
+
+	}
+	
+	
+
+
+	System::Void MyForm::sendButton_Click(System::Object^  sender, System::EventArgs^  e){
+	char* result = "result";
+	char* host = "host";
+	DWORD Flags = 0;
+	
+	portNum = (int) portNumberChooser->Value; 
+	Control_Packet* ctrlPkt = (Control_Packet*) malloc(sizeof(Control_Packet));
+	ctrlPkt->ctrlPktSize = (int) pktSizeChoice->Value;
+	ctrlPkt->numTimesSending = (int) sendTimesChoice->Value;
+	ctrlPkt->protocolType = (int) protocolTypeChooser->SelectedIndex;
+	WSABUF DataBuf;
+	DataBuf.buf = (char*)ctrlPkt;
+	DataBuf.len = 1024;
+
+	if((ipAddress = (String^) ipAddressTextBox->Text) != ""){
+	ipFlag = TRUE;
+	result = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(ipAddress);
+	} else if((nameDest = (String^) nameTextBox->Text) != ""){
+	nameFlag = TRUE;
+	host = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(nameDest);
+	}else{
+	errMsg = "No IP or Host";
+	MessageBox::Show(errMsg);
+	return;
+	}
+
+	SenderAddr.sin_family = AF_INET;
+	SenderAddr.sin_port = htons(portNum);
+	SenderAddr.sin_addr.s_addr  = htonl(INADDR_ANY);
+	InternetAddr.sin_port = htons(portNum);
+	InternetAddr.sin_family = AF_INET;
+
+	if ((InternetAddr.sin_addr.s_addr = inet_addr(result)) == INADDR_NONE){
+	errMsg =  "Unable to get IP Address";
+	MessageBox::Show(errMsg);
+	return;
+	}
+
+	hp = (struct hostent*) malloc(DATA_BUFSIZE);
+
+	if((SendOverlapped.hEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
+	errMsg = "WSACreateEvent failed with error: \n", WSAGetLastError();
+	MessageBox::Show(errMsg);
+	WSACleanup();
+	return;
+	}
+
+	if (ctrlPkt->protocolType == PROTOCOL_TCP){
+	if ((SendSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED)) == -1)
+	{
+	errMsg = "Cannot create socket";
+	MessageBox::Show(errMsg);
+	WSACloseEvent(SendOverlapped.hEvent);
+	WSACleanup();
+	return;
+	}
+	if(WSAConnect(SendSocket, (struct sockaddr *)&InternetAddr, sizeof(InternetAddr), NULL, NULL, NULL,NULL)== -1){
+	errMsg =  "Can't connect to server.";
+	MessageBox::Show(errMsg);
+	return;
+	}
+	if(send(SendSocket, DataBuf.buf, DataBuf.len, Flags) == SOCKET_ERROR){
+	errMsg = "Sending Control Packet failed " + GetLastError();
+	MessageBox::Show(errMsg);
+	return ;
+	}
+	if ((ThreadHandle = CreateThread(NULL, 0, TCPSenderThread, 0, 0, &ThreadId)) == NULL)
+	{
+	errMsg = "CreateThread failed with error \n" + GetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	//TCPSend(portNum, result, host, ctrlPkt);
+	} else{
+	if ((SendSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
+	errMsg = "socket failed with error: \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	WSACloseEvent(SendOverlapped.hEvent);
+	WSACleanup();
+	return;
+	}
+	//Send out Control Packet
+	if(sendto(SendSocket, DataBuf.buf, DataBuf.len, Flags,(struct sockaddr *)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR){
+	errMsg = "Sending Control Packet failed " + GetLastError();
+	MessageBox::Show(errMsg);
+	return ;
+	}
+
+	if ((ThreadHandle = CreateThread(NULL, 0, UDPSenderThread, (LPVOID)&ctrlPkt, 0, &ThreadId)) == NULL){
+	errMsg = "CreateThread failed with error \n" + GetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	//UDPSend(portNum, result, host, ctrlPkt);
+	}
+	}
+
+	void TCPSend(int portNum, char* result, char* host, Control_Packet* ctrlPkt){
+	String^ errMsg = gcnew String("error");
+	WSABUF DataBuf;
+	DWORD Flags = 0;
+	LPDWORD numBytesSent = 0;
+	char buffer [33];
+	_itoa_s(ctrlPkt->ctrlPktSize, buffer, 10); 
+	DataBuf.buf = (char*)ctrlPkt;
+	DataBuf.len = sizeof(ctrlPkt);
+
+	if(WSAConnect(SendSocket, (struct sockaddr *)&InternetAddr, sizeof(InternetAddr), NULL, NULL, NULL,NULL)== -1){
+	errMsg =  "Can't connect to server.";
+	MessageBox::Show(errMsg);
+	return;
+	}
+	//Send out Control Packet
+	if(send(SendSocket, DataBuf.buf, DataBuf.len, Flags) == SOCKET_ERROR){
+	errMsg = "Sending Control Packet failed " + GetLastError();
+	MessageBox::Show(errMsg);
+	return ;
+	}	
+
+	if ((ThreadHandle = CreateThread(NULL, 0, TCPSenderThread, 0, 0, &ThreadId)) == NULL)
+	{
+	errMsg = "CreateThread failed with error \n" + GetLastError();
+	MessageBox::Show(errMsg);
+	return;
+	}
+	}
+	
+	DWORD WINAPI TCPSenderThread(LPVOID lpParameter){
+
+	String^ errMsg = gcnew String("error");
+	WSABUF DataBuf;
+	DataBuf.buf = bufferFile;
+	DataBuf.len = packetSize;
+	DWORD Flags = 0;
+	SecureZeroMemory((PVOID) &SendOverlapped, sizeof(WSAOVERLAPPED));
+	for (int i = 0; i < sendTimes; i++){
+	if(WSASend(SendSocket, &DataBuf, 1, NULL, Flags, &SendOverlapped, TCPSenderRoutine) == SOCKET_ERROR){
+	errMsg = "WSASend failed" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return -1;
+	}	
+	}
+	return 1;
+	}
+	
+	void CALLBACK TCPSenderRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags){
+	//shutdown(SendSocket, SD_SEND );
+	}
+	
+	oid UDPSend(int portNum, char* result, char* host, Control_Packet* ctrlPkt){
+	String^ errMsg = gcnew String("error");	
+	WSABUF DataBuf;
+	DWORD Flags = 0;
+	LPDWORD numBytesSent = 0;
+	char buffer [33];
+	_itoa_s(ctrlPkt->ctrlPktSize, buffer, 10); 
+	DataBuf.buf = buffer;
+	DataBuf.len = 10;
+
+
+	}
+	
+	
+	/*
+	SOCKET AcceptSocket;
+	WSADATA wsaData;
+	SOCKET ListenSocket;
+	SOCKET SendSocket;
+	SOCKADDR_IN InternetAddr;
+	HANDLE ThreadHandle;
+	DWORD ThreadId;
+	HANDLE fileToSend;
+	struct hostent	*hp;
+	BOOL nameFlag = FALSE;
+	BOOL ipFlag = FALSE;
+	WSAEVENT AcceptEvent;
+	WSAOVERLAPPED SendOverlapped;
+	struct sockaddr_in SenderAddr;
+	char* bufferFile;
+	int packetSize, sendTimes, Ret;
+	Control_Packet* ctrlPkt;
+	PntlssInfo* pktPntlss;
+
+
+	
+	
+
+	v
+
+	DWORD WINAPI UDPSenderThread(LPVOID lpParameter){
+	int length = sizeof(InternetAddr);
+	String^ errMsg = gcnew String("error");
+	DWORD BytesSent = 0, Flag = 0;
+	WSABUF DataBuf;
+	char* sbuf = "test_sending_a_long_string_of_characters!";
+	DataBuf.buf = sbuf;
+
+	SecureZeroMemory((PVOID) &SendOverlapped, sizeof(WSAOVERLAPPED));
+	Control_Packet* ctrl_Pkt = (Control_Packet*)lpParameter;
+	DataBuf.len = ctrl_Pkt->ctrlPktSize;
+
+	for (int i = 0; i < ctrl_Pkt->numTimesSending; i++){
+	if (WSASendTo(SendSocket, &DataBuf, 1, NULL, Flag, (SOCKADDR*) &InternetAddr, length , &SendOverlapped, NULL) == SOCKET_ERROR){
+	if (WSAGetLastError() != WSA_IO_PENDING){
+	errMsg = "WSASendTo() failed with error \n" + WSAGetLastError();
+	MessageBox::Show(errMsg);
+	return -1;
+	}
+	}
+	}
+	return 1;
+	}
+
+	void CALLBACK UDPSenderRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags){
+	}
+
+	void time(){
+
+	}
+
+	*/
