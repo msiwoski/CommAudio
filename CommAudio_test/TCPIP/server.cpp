@@ -1,8 +1,6 @@
 #include "server_menu.h"
 /* handle to form */
 HWND ghwnd;
-DWORD EventTotal = 0;
-WSAEVENT EventArray[WSA_MAXIMUM_WAIT_EVENTS];
 LPSOCKET_INFORMATION server_SocketInfo;
 
 u_long  lTTL               = TIMECAST_TTL;

@@ -4,15 +4,6 @@
 #define _CLIENTMENU_
 
 #include "main.h"
-#include <stdio.h>
-#include <fstream> 
-#include <string.h>
-#include "atlstr.h"
-
-DWORD WINAPI UDPWorkerThread(LPVOID lpParameter);
-VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
-int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port);
-void run_client(System::Windows::Forms::ListBox ^lb);
 
 namespace TCPIP 
 {

@@ -4,17 +4,12 @@
 #define _SERVERMENU_
 
 #include "main.h"
-#include "atlstr.h"
-#include <string>
 
 #define FILE_SIZE 255
 
 #define PACKETSRECV_LISTBOX WM_APP+1
 #define BYTESRECV_LISTBOX   WM_APP+2
 #define STRING_LISTBOX      WM_APP+3
-
-void run_server();
-int init_server(int port);
 
 namespace TCPIP {
 
@@ -112,7 +107,6 @@ namespace TCPIP {
 
 
 	private: System::ComponentModel::BackgroundWorker^  backgroundWorker;
-	private: System::ComponentModel::BackgroundWorker^  UDPbackgroundWorker;
 	private: System::Windows::Forms::Label^  FileLabel;
 	private: System::Windows::Forms::TextBox^  FileTextBox;
 	private: System::Windows::Forms::Button^  SendButton;
@@ -140,7 +134,6 @@ namespace TCPIP {
 			this->CloseButton = (gcnew System::Windows::Forms::Button());
 			this->openFileDialog1 = (gcnew System::Windows::Forms::OpenFileDialog());
 			this->backgroundWorker = (gcnew System::ComponentModel::BackgroundWorker());
-			this->UDPbackgroundWorker = (gcnew System::ComponentModel::BackgroundWorker());
 			this->FileLabel = (gcnew System::Windows::Forms::Label());
 			this->FileTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->SendButton = (gcnew System::Windows::Forms::Button());
@@ -250,8 +243,6 @@ namespace TCPIP {
 			 }
 	private: System::Void ListenButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
-				 char fileName[128] = "";
-
 				 this->PortTextBox->Enabled = false;
 				 this->ListenButton->Enabled = false;
 				 this->CloseButton->Enabled = true;

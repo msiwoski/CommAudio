@@ -5,38 +5,20 @@
 #include <ws2tcpip.h>
 #include <Windows.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 #include <cstdio>
+#include <string>
+#include <fstream> 
+#include "atlstr.h"
 
 #define DATA_BUFSIZE		1024
-#define PROTOCOL_TCP		0
-#define PROCOTOL_UDP		1
 #define FILENAMELENGTH 		32
 #define TIMEOUT_TIME		3000
 #define TIMEOUT_TIME_UDP	3000
 #define TIMECAST_TTL		2
 #define TIMECAST_INTRVL		7
 
-typedef struct{
-	char fileName[FILENAMELENGTH];
-} ControlPacket;
-
-typedef struct {
-	WSAEVENT AcceptEvent;
-} PntlssInfo;
-
-typedef struct {
-	SOCKADDR_IN InternetAddr;
-	SOCKADDR_IN SenderAddr;
-	SOCKET AcceptSocket;
-	SOCKET SenderSocket;
-	SOCKET ListenSocket;
-	HANDLE ThreadHandle;
-	DWORD ThreadID;
-	WSAEVENT AcceptEvent;
-	WSAOVERLAPPED SendOverlapped;
-	char* fileData;
-} GoodInfo;
 
 typedef struct _SOCKET_INFORMATION
 {
@@ -51,11 +33,6 @@ typedef struct _SOCKET_INFORMATION
 } SOCKET_INFORMATION, * LPSOCKET_INFORMATION;
 
 typedef struct {
-	WSADATA wsaData;	
-	int Ret;
-} InformationWSA;
-
-typedef struct {
 	char* fileName;
 	FILE* pfile;
 } InfoFile;
@@ -63,6 +40,12 @@ typedef struct {
 /* 
 *	FUNCTION PROTOTYPES
 */
+void run_server();
+int init_server(int port);
 
+DWORD WINAPI UDPWorkerThread(LPVOID lpParameter);
+VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port);
+void run_client(System::Windows::Forms::ListBox ^lb);
 
 #endif
