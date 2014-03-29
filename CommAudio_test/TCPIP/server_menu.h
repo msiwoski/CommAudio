@@ -31,6 +31,11 @@ namespace TCPIP {
 		server_menu(void)
 		{
 			InitializeComponent();
+			if (!BASS_Init(-1,44100,0,hwnd,NULL))
+			{
+				MessageBox::Show("Can't initialize device");
+				return;
+			}
 			//
 			//TODO: Add the constructor code here
 			//
@@ -110,6 +115,10 @@ namespace TCPIP {
 	private: System::Windows::Forms::Label^  FileLabel;
 	private: System::Windows::Forms::TextBox^  FileTextBox;
 	private: System::Windows::Forms::Button^  SendButton;
+	private: System::Windows::Forms::Button^  playButton;
+	private: System::Windows::Forms::Button^  stopButton;
+	private: System::Windows::Forms::Button^  pauseButton;
+	private: System::Windows::Forms::Button^  FileDirButton;
 
 
 
@@ -137,6 +146,10 @@ namespace TCPIP {
 			this->FileLabel = (gcnew System::Windows::Forms::Label());
 			this->FileTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->SendButton = (gcnew System::Windows::Forms::Button());
+			this->playButton = (gcnew System::Windows::Forms::Button());
+			this->stopButton = (gcnew System::Windows::Forms::Button());
+			this->pauseButton = (gcnew System::Windows::Forms::Button());
+			this->FileDirButton = (gcnew System::Windows::Forms::Button());
 			this->SuspendLayout();
 			// 
 			// ListenButton
@@ -168,7 +181,7 @@ namespace TCPIP {
 			// outputListBox
 			// 
 			this->outputListBox->FormattingEnabled = true;
-			this->outputListBox->Location = System::Drawing::Point(54, 117);
+			this->outputListBox->Location = System::Drawing::Point(54, 146);
 			this->outputListBox->Name = L"outputListBox";
 			this->outputListBox->Size = System::Drawing::Size(237, 186);
 			this->outputListBox->TabIndex = 3;
@@ -189,11 +202,10 @@ namespace TCPIP {
 			this->backgroundWorker->WorkerSupportsCancellation = true;
 			this->backgroundWorker->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &server_menu::backgroundWorker_DoWork);
 			// 
-			// 
 			// FileLabel
 			// 
 			this->FileLabel->AutoSize = true;
-			this->FileLabel->Location = System::Drawing::Point(22, 321);
+			this->FileLabel->Location = System::Drawing::Point(22, 350);
 			this->FileLabel->Name = L"FileLabel";
 			this->FileLabel->Size = System::Drawing::Size(26, 13);
 			this->FileLabel->TabIndex = 13;
@@ -201,25 +213,70 @@ namespace TCPIP {
 			// 
 			// FileTextBox
 			// 
-			this->FileTextBox->Location = System::Drawing::Point(54, 318);
+			this->FileTextBox->Location = System::Drawing::Point(54, 347);
 			this->FileTextBox->Name = L"FileTextBox";
 			this->FileTextBox->Size = System::Drawing::Size(237, 20);
 			this->FileTextBox->TabIndex = 12;
 			// 
 			// SendButton
 			// 
-			this->SendButton->Location = System::Drawing::Point(54, 344);
+			this->SendButton->Location = System::Drawing::Point(54, 373);
 			this->SendButton->Name = L"SendButton";
 			this->SendButton->Size = System::Drawing::Size(75, 23);
 			this->SendButton->TabIndex = 11;
 			this->SendButton->Text = L"Send";
 			this->SendButton->UseVisualStyleBackColor = true;
 			// 
+			// playButton
+			// 
+			this->playButton->Location = System::Drawing::Point(54, 97);
+			this->playButton->Name = L"playButton";
+			this->playButton->Size = System::Drawing::Size(75, 23);
+			this->playButton->TabIndex = 14;
+			this->playButton->Text = L"Play";
+			this->playButton->UseVisualStyleBackColor = true;
+			this->playButton->Click += gcnew System::EventHandler(this, &server_menu::playButton_Click);
+			// 
+			// stopButton
+			// 
+			this->stopButton->Location = System::Drawing::Point(135, 97);
+			this->stopButton->Name = L"stopButton";
+			this->stopButton->Size = System::Drawing::Size(75, 23);
+			this->stopButton->TabIndex = 15;
+			this->stopButton->Text = L"Stop";
+			this->stopButton->UseVisualStyleBackColor = true;
+			this->stopButton->Click += gcnew System::EventHandler(this, &server_menu::stopButton_Click);
+			// 
+			// pauseButton
+			// 
+			this->pauseButton->Location = System::Drawing::Point(216, 97);
+			this->pauseButton->Name = L"pauseButton";
+			this->pauseButton->Size = System::Drawing::Size(75, 23);
+			this->pauseButton->TabIndex = 16;
+			this->pauseButton->Text = L"Pause";
+			this->pauseButton->UseVisualStyleBackColor = true;
+			this->pauseButton->Click += gcnew System::EventHandler(this, &server_menu::pauseButton_Click);
+			// 
+			// FileDirButton
+			// 
+			this->FileDirButton->FlatStyle = System::Windows::Forms::FlatStyle::Popup;
+			this->FileDirButton->Location = System::Drawing::Point(268, 347);
+			this->FileDirButton->Name = L"FileDirButton";
+			this->FileDirButton->Size = System::Drawing::Size(23, 20);
+			this->FileDirButton->TabIndex = 17;
+			this->FileDirButton->Text = L"..";
+			this->FileDirButton->UseVisualStyleBackColor = true;
+			this->FileDirButton->Click += gcnew System::EventHandler(this, &server_menu::FileDirButton_Click_1);
+			// 
 			// server_menu
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(319, 382);
+			this->ClientSize = System::Drawing::Size(319, 436);
+			this->Controls->Add(this->FileDirButton);
+			this->Controls->Add(this->pauseButton);
+			this->Controls->Add(this->stopButton);
+			this->Controls->Add(this->playButton);
 			this->Controls->Add(this->FileLabel);
 			this->Controls->Add(this->FileTextBox);
 			this->Controls->Add(this->SendButton);
@@ -236,11 +293,6 @@ namespace TCPIP {
 
 		}
 #pragma endregion
-	private: System::Void FileDirButton_Click(System::Object^  sender, System::EventArgs^  e) 
-			 {
-				 openFileDialog1->ShowDialog();
-				 FileTextBox->Text = openFileDialog1->FileName;
-			 }
 	private: System::Void ListenButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 this->PortTextBox->Enabled = false;
@@ -258,13 +310,19 @@ namespace TCPIP {
 	private: System::Void backgroundWorker_DoWork(System::Object^  sender, System::ComponentModel::DoWorkEventArgs^  e) 
 			 {
 				 int port = 0;
-				 char fileName[128] = "";
-
+				 String^ errMsg		= gcnew String("error");
 				 pin_ptr<const wchar_t> tempFileName;
-
 
 				 if(PortTextBox->Text != "")
 					 port = System::Int32::Parse(PortTextBox->Text);
+
+
+				 if (!BASS_Init(-1,44100,0,hwnd,NULL))
+				 {
+					 errMsg = "Can't initialize device";
+					 MessageBox::Show(errMsg);
+					 return;
+				 }
 
 				 init_server(port);
 				 run_server();
@@ -287,6 +345,42 @@ namespace TCPIP {
 	private: System::Void clearButton_Click_1(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 outputListBox->Items->Clear();
+			 }
+	private: System::Void playButton_Click(System::Object^  sender, System::EventArgs^  e) 
+			 {
+				 char *fileName;
+				 pin_ptr<const wchar_t> tempFileName;
+
+				 if(FileTextBox->Text != "")
+				 {
+					 tempFileName = PtrToStringChars(this->FileTextBox->Text);
+					 fileName = (char*) malloc(sizeof(tempFileName));
+					 wcstombs_s(0, fileName, wcslen(tempFileName) + 1, tempFileName, _TRUNCATE);
+				 }
+				 play(fileName);
+			 }
+	private: System::Void stopButton_Click(System::Object^  sender, System::EventArgs^  e) 
+			 {
+				 String^ errMsg		= gcnew String("error");
+				 errMsg = "Can't Create Stream File";
+
+				 /*if (s!=LB_ERR) {
+					 BASS_ChannelStop(strs[s]); // stop the music
+				 }*/
+			 }
+	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
+			 {
+				 String^ errMsg		= gcnew String("error");
+				 errMsg	= "Can't Create Stream File";
+				 /*int s	= GETMOD();
+				 if (s != LB_ERR) {
+					 BASS_ChannelPause(strs[s]);	//pause the music
+				 }*/
+			 }
+	private: System::Void FileDirButton_Click_1(System::Object^  sender, System::EventArgs^  e) 
+			 {
+				 openFileDialog1->ShowDialog();
+				 FileTextBox->Text = openFileDialog1->FileName;
 			 }
 };
 }
