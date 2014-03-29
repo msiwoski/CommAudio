@@ -8,6 +8,14 @@ u_short nInterval          = TIMECAST_INTRVL;
 SYSTEMTIME stSysTime;
 
 
+/* ADDING THE BASS LIBRARY!!!! */
+//HSAMPLE *sams	= NULL;
+//HSAMPLE sam;
+/* testing the music file?!?!*/
+HSTREAM *strs	=	NULL;
+HSTREAM str;
+int strc=0;
+
 int init_server(int port)
 {
 	int nRet, i;
@@ -98,5 +106,27 @@ void run_server()
 		WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
 
 		Sleep(nInterval*1000);
+	}
+}
+
+void play(char *filename)
+{
+	int stream;
+
+	if (filename!=NULL)
+	{
+		stream = BASS_StreamCreateFile(FALSE,filename,0,0,0);
+		/*{
+			strc++;
+			strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
+			strs[strc-1]=str;
+			//errMsg = "Can't open stream";
+			//MessageBox::Show(errMsg);
+		}*/
+
+		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+			//errMsg = "Can't open stream";
+			//MessageBox::Show(errMsg);
+		//}
 	}
 }
