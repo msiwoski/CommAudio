@@ -136,20 +136,21 @@ void play(char *filename)
 	}
 }
 
-HDSP fladsp=0;	// DSP handle
-#define FLABUFLEN 350	// buffer length
-float flabuf[FLABUFLEN][2];	// buffer
-int flapos;	// cur.pos
-float flas,flasinc;	// sweep pos/increment
+
 void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
 {
 	short *s=(short *)buffer;
+	fp = fopen("log.mp3", "ab");
     for (; length; length-=4, s+=2) {
-        /*short temp=s[0];
+        short temp=s[0];
         s[0]=s[1];
-        s[1]=temp;*/
-		s[0]*=2;
+        s[1]=temp;
+		//s[0]*=2;
+		//fp = fopen("log.mp3", "ab");
+		//fwrite(&s, 2, sizeof(s), fp);
+		//fclose(fp);
     }
+	fclose(fp);
 
 	/*short *s = (short *)buffer;
 
@@ -160,15 +161,50 @@ void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *
 		fclose(fp);
 	}*/
 	//BASS_StreamPutData((HSTREAM)user,buffer,length);
-	/*float *d=(float*)buffer;
-	float c;
-	DWORD a;
 
-	fp = fopen("log.mp3", "ab");
-	for (a=0;a<length/4;a+=2) 
-	{
-		c = d[a];
-		fwrite(&c, 1, sizeof(d), fp);
-	}
-	fclose(fp);*/
 }
+
+
+/*
+SERVER==================================================
+BASS_RecordInit(-1); // initialize default recording device
+record=BASS_RecordStart(freq, chans, 0, RecordProc, 0); // start recording
+BASS_Encode_Start(record, "lame -", 0, EncodeProc, 0); // set an MP3 encoder (LAME) on it
+
+...
+
+// the recording callback
+BOOL CALLBACK RecordProc(HRECORD handle, void *buffer, DWORD length, void *user)
+{
+    return TRUE; // just continue recording
+}
+
+// the encoding callback
+void CALLBACK EncodeProc(HENCODE handle, DWORD channel, void *buffer, DWORD length, void *user)
+{
+	// send "length" bytes of data in "buffer" to the client
+}
+
+
+CLIENT====================================
+void CALLBACK FileCloseProc(void *user)
+{
+	// close the connection
+}
+
+QWORD CALLBACK FileLenProc(void *user)
+{
+	return 0; // indeterminate length
+}
+
+DWORD CALLBACK FileReadProc(void *buffer, DWORD length, void *user)
+{
+	// read up to "length" bytes of data from the server
+}
+
+...
+
+BASS_FILEPROCS fileprocs={FileCloseProc, FileLenProc, FileReadProc, NULL}; // callback table
+stream=BASS_StreamCreateFileUser(STREAMFILE_BUFFER, 0, &fileprocs, 0); // create the stream
+BASS_ChannelPlay(stream, 0); // start playing
+*
