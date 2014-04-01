@@ -8,9 +8,6 @@ u_short nInterval          = TIMECAST_INTRVL;
 SYSTEMTIME stSysTime;
 
 
-/* ADDING THE BASS LIBRARY!!!! */
-//HSAMPLE *sams	= NULL;
-//HSAMPLE sam;
 /* testing the music file?!?!*/
 DWORD outdev[2];	// output devices
 DWORD latency[2];	// latencies
@@ -207,4 +204,4 @@ DWORD CALLBACK FileReadProc(void *buffer, DWORD length, void *user)
 BASS_FILEPROCS fileprocs={FileCloseProc, FileLenProc, FileReadProc, NULL}; // callback table
 stream=BASS_StreamCreateFileUser(STREAMFILE_BUFFER, 0, &fileprocs, 0); // create the stream
 BASS_ChannelPlay(stream, 0); // start playing
-*
+*/
