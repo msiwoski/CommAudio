@@ -4,17 +4,11 @@
 -- PROGRAM: WinAsgn2
 --
 -- FUNCTIONS:
--- DWORD WINAPI TCPWorkerThread(LPVOID)
 -- DWORD WINAPI UDPWorkerThread(LPVOID)
--- VOID CALLBACK TCPCtrlWorkerRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD)
--- VOID CALLBACK TCPWorkerRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD)
 -- VOID CALLBACK UDPWorkerRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD)
--- VOID TCPSend(int, char*, char*, ControlPacket*)
 -- VOID UDPSend(int, char*, char*,  ControlPacket*)
--- DWORD WINAPI TCPSenderThread(LPVOID)
 -- DWORD WINAPI UDPSenderThread(LPVOID)
 -- VOID CALLBACK UDPSenderRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD)
--- VOID CALLBACK TCPSenderRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD)
 -- long delay(SYSTEMTIME, SYSTEMTIME)
 --
 -- DATE: February 03, 2014
@@ -173,13 +167,24 @@ System::Void MyForm::serverButton_Click(System::Object^  sender, System::EventAr
 -- This function opens the OpenFileDialog so that the user is able to select a file to send.
 ------------------------------------------------------------------------------------------------------------------*/
 System::Void MyForm::openButton_Click(System::Object^  sender, System::EventArgs^  e) {
-	openFileDialog1->Filter = "Text Files|*.txt|All Files|*.*";
+	String^ errMsg			= gcnew String("error");
+	openFileDialog1->Filter = "Streamable files (wav/aif/mp3/mp2/mp1/ogg)|*.wav;*.aif;*.mp3;*.mp2;*.mp1;*.ogg|All files|*.*";
 	ControlPacket* ctrlPkt	= (ControlPacket*) malloc(sizeof(ControlPacket));
 	fileInfo = (InfoFile*) malloc(sizeof(InfoFile));
 	openFlag = 1;
 	if(openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK ){
 		fileInfo->fileName = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(openFileDialog1->FileName + "\0");
-		fileInfo->pfile = fopen(fileInfo->fileName, "r");
+		//fileInfo->pfile = fopen(fileInfo->fileName, "r");
+		if (str=BASS_StreamCreateFile(FALSE,fileInfo->fileName,0,0,0)) {
+			strc++;
+			strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
+			strs[strc-1]=str;
+			STLM(LB_ADDSTRING,0,strrchr(fileInfo->fileName,'\\')+1);
+		} else{
+			errMsg = "Can't open stream";
+			MessageBox::Show(errMsg);
+			return;
+		}
 	}
 }
 
@@ -250,19 +255,13 @@ System::Void MyForm::receiveButton_Click(System::Object^  sender, System::EventA
 	gInfo->SenderAddr.sin_addr.s_addr	= htonl(INADDR_ANY);
 	gInfo->SenderAddr.sin_port			= htons(portNum);
 
-	if (gInfo->protocolType == PROTOCOL_TCP){
-		if ((gInfo->ListenSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
-			errMsg = "Failed to get a socket for TCP. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-	} else {
-		if ((gInfo->ListenSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
-			errMsg = "Failed to get a socket for UDP. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
+
+	if ((gInfo->ListenSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
+		errMsg = "Failed to get a socket for UDP. Error: " + WSAGetLastError();
+		MessageBox::Show(errMsg);
+		return;
 	}
+	
 
 	if (bind(gInfo->ListenSocket, (PSOCKADDR) &(gInfo->InternetAddr), sizeof(SOCKADDR_IN)) == SOCKET_ERROR){
 		errMsg = "bind() failed. Error: " + WSAGetLastError();
@@ -272,190 +271,14 @@ System::Void MyForm::receiveButton_Click(System::Object^  sender, System::EventA
 		return;
 	}
 
-	if (gInfo->protocolType == PROTOCOL_TCP){
-		if (listen(gInfo->ListenSocket, 5)){
-			errMsg = "listen() failed. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-		if ((gInfo->ThreadHandle = CreateThread(NULL, 0, TCPWorkerThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL){
-			errMsg = "CreateThread failed for TCP. Error: " + GetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-	} else {
-		if ((gInfo->ThreadHandle = CreateThread(NULL, 0, UDPWorkerThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL){
-			errMsg = "CreateThread failed for UDP. Error: " + GetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: TCPWorkerThread
---
--- DATE: February 02, 2014
---
--- REVISIONS: 
---
--- DESIGNER: Mat Siwoski
---
--- PROGRAMMER: Mat Siwoski
---
--- INTERFACE: DWORD WINAPI TCPWorkerThread(LPVOID lpParameter)
---				LPVOID lpParameter: Void parameter passed by the thread. Information passed is the GoodInformation Struct
---
--- RETURNS: Return true upon success, False if there is an error.
---
--- NOTES:
--- This function is the thread for the TCP Receive portion of the server. In a forever loop, the application will 
--- wait for an accept (SYN), then set information on the socket, create an event and receive the control packet.
--- The function will wait for multiple events and reset the event afterwards.
-------------------------------------------------------------------------------------------------------------------*/
-DWORD WINAPI TCPWorkerThread(LPVOID lpParameter){
-	LPSOCKET_INFORMATION SocketInfo;
-	DWORD Flags = 0, RecvBytes = 0;
-	String^ errMsg = gcnew String("error");
-	GoodInfo* gInfo = (GoodInfo*) lpParameter;
-	while(TRUE){
-		gInfo->AcceptSocket = WSAAccept(gInfo->ListenSocket,NULL, NULL,NULL, NULL);
-		if ((SocketInfo = (LPSOCKET_INFORMATION) GlobalAlloc(GPTR,sizeof(SOCKET_INFORMATION))) == NULL){
-			errMsg = "GlobalAlloc() failed. Error: " + GetLastError();
-			MessageBox::Show(errMsg);
-			return FALSE;
-		}
-
-		SocketInfo->Socket = gInfo->AcceptSocket;
-		ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));  
-		SocketInfo->BytesSEND = 0;
-		SocketInfo->BytesRECV = 0;
-		SocketInfo->DataBuf.len = DATA_BUFSIZE;
-		SocketInfo->DataBuf.buf = (char*)malloc(DATA_BUFSIZE);
-		SocketInfo->Overlapped.hEvent = WSACreateEvent();
-		
-		if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags,
-			&(SocketInfo->Overlapped), TCPCtrlWorkerRoutine) == SOCKET_ERROR){
-				if (WSAGetLastError() != WSA_IO_PENDING){
-					errMsg = "WSARecv() failed.  Error: " + WSAGetLastError();
-					MessageBox::Show(errMsg);
-					return FALSE;
-				}
-		}
-		if (WSAWaitForMultipleEvents(1, &(SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
-			MessageBox::Show("WSA_TIMEOUT");
-			return FALSE;
-		}
-		WSAResetEvent(SocketInfo->Overlapped.hEvent);
-	}
-	return TRUE;
-}
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: TCPCtrlWorkerRoutine
---
--- DATE: February 04, 2014
---
--- REVISIONS: 
---
--- DESIGNER: Mat Siwoski
---
--- PROGRAMMER: Mat Siwoski
---
--- INTERFACE: VOID CALLBACK TCPCtrlWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags)
---				DWORD Error: Error during the receive.
---				DWORD BytesTransferred: Number of bytes received
---				LPWSAOVERLAPPED Overlapped: The overlapped structure containing the socket information
--				DWORD InFlags: Flags for the worker routine
---
--- RETURNS: -
---
--- NOTES:
--- This function deals with receiving the control packet from the client. The control packet will contain the number
--- of packets being sent and the size of the packets. Upone receiving the control packet, WSARecv is called again which
--- would receive the actual information the client would like to send.
-------------------------------------------------------------------------------------------------------------------*/
-VOID CALLBACK TCPCtrlWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags){
-	DWORD Flags = 0;
-	String^ errMsg = gcnew String("error");
-	LPSOCKET_INFORMATION SI = (LPSOCKET_INFORMATION) Overlapped;
-	ControlPacket *pkt		= (ControlPacket*)SI->DataBuf.buf;
-	SI->numSending = pkt->numTimesSending;
-	SI->DataBuf.len = pkt->ctrlPktSize;
-	SI->DataBuf.buf = (char*)malloc(pkt->ctrlPktSize);
-	SI->Buffer = (char*) malloc(pkt->ctrlPktSize);
-	if(BytesTransferred == 0 || Error != 0){
-		MessageBox::Show("Connection has been closed.");
-		return;
-	}
-	GetSystemTime(&stStartTime);
-	if (WSARecv(SI->Socket, &(SI->DataBuf), 1, NULL, &Flags, &(SI->Overlapped), TCPWorkerRoutine) == SOCKET_ERROR)
-	{
-		if (WSAGetLastError() != WSA_IO_PENDING ){
-			errMsg = "WSARecv() failed. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-	}
-	if(WSAWaitForMultipleEvents(1, &(SI->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
-	}
-	WSAResetEvent(SI->Overlapped.hEvent);
-}
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: TCPWorkerRoutine
---
--- DATE: February 04, 2014
---
--- REVISIONS: 
---
--- DESIGNER: Mat Siwoski
---
--- PROGRAMMER: Mat Siwoski
---
--- INTERFACE: VOID CALLBACK TCPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags)
---				DWORD Error: Error during the receive.
---				DWORD BytesTransferred: Number of bytes received
---				LPWSAOVERLAPPED Overlapped: The overlapped structure containing the socket information
--				DWORD InFlags: Flags for the worker routine
---
--- RETURNS: -
---
--- NOTES:
--- This function deals with receiving the packets from the client. When the amount of packets has been reached, the program
--- will stop receiving.
-------------------------------------------------------------------------------------------------------------------*/
-VOID CALLBACK TCPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags){
-	DWORD Flags = 0;
-	String^ errMsg = gcnew String("error");
-	LPSOCKET_INFORMATION SI = (LPSOCKET_INFORMATION) Overlapped;
 	
-	if(BytesTransferred == 0 || Error != 0){
-		MessageBox::Show("Connection has been closed.");
-		return;
-	}
-	String^ serr = gcnew String(SI->DataBuf.buf, 0, BytesTransferred);
-	SI->pktsRcvd++;
-	if (SI->pktsRcvd == SI->numSending){
-		GetSystemTime(&stEndTime);
-		errMsg = "Round-trip delay = " +  delay(stStartTime, stEndTime) + "ms.";
-		MessageBox::Show(errMsg);
-		errMsg = "Total # Received: " + SI->pktsRcvd + " Total # Needed: " + SI->numSending;
+	if ((gInfo->ThreadHandle = CreateThread(NULL, 0, UDPWorkerThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL){
+		errMsg = "CreateThread failed for UDP. Error: " + GetLastError();
 		MessageBox::Show(errMsg);
 		return;
-	}else if (WSARecv(SI->Socket, &(SI->DataBuf), 1, NULL, &Flags, &(SI->Overlapped), TCPWorkerRoutine) == SOCKET_ERROR){
-		if (WSAGetLastError() != WSA_IO_PENDING ){
-			errMsg = "WSARecv() failed. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
 	}
-
-	if (WSAWaitForMultipleEvents(1, &(SI->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
-	}
-	WSAResetEvent(SI->Overlapped.hEvent);
+	
 }
-
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: UDPWorkerThread
 --
@@ -706,93 +529,24 @@ System::Void MyForm::sendButton_Click(System::Object^  sender, System::EventArgs
 		WSACleanup();
 		return;
 	}
-	if (gInfo->protocolType == PROTOCOL_TCP){
-		if ((gInfo->SenderSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED)) == -1){
-			errMsg = "WSASocket failed. Cannot create socket. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			WSACloseEvent(gInfo->SendOverlapped.hEvent);
-			WSACleanup();
-			return;
-		}
-		if(WSAConnect(gInfo->SenderSocket, (SOCKADDR*)&(gInfo->InternetAddr), sizeof(SOCKADDR), NULL, NULL, NULL,NULL)== -1){
-			errMsg =  "WSAConnect Failed. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-
-		if(send(gInfo->SenderSocket, DataBuf.buf, DataBuf.len, Flags) == SOCKET_ERROR){
-			errMsg = "Sending Control Packet failed " + GetLastError();
-			MessageBox::Show(errMsg);
-			return ;
-		}
-		if ((gInfo->ThreadHandle = CreateThread(NULL, 0, TCPSenderThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL)
-		{
-			errMsg = "CreateThread failed with error \n" + GetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
-	} else {
-		if ((gInfo->SenderSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
-			errMsg = "WSASocket failed. Cannot create socket. Error: " + WSAGetLastError();
-			MessageBox::Show(errMsg);
-			WSACloseEvent(gInfo->SendOverlapped.hEvent);
-			WSACleanup();
-			return;
-		}
-		if(sendto(gInfo->SenderSocket, DataBuf.buf, DataBuf.len, Flags, (SOCKADDR*) &(gInfo->InternetAddr), sizeof(gInfo->InternetAddr)) == SOCKET_ERROR){
-			errMsg = "Sending Control Packet failed. Error: " + GetLastError();
-			MessageBox::Show(errMsg);
-			return ;
-		}
-		if ((gInfo->ThreadHandle = CreateThread(NULL, 0, UDPSenderThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL){
-			errMsg = "CreateThread failed. Error: " + GetLastError();
-			MessageBox::Show(errMsg);
-			return;
-		}
+	if ((gInfo->SenderSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
+		errMsg = "WSASocket failed. Cannot create socket. Error: " + WSAGetLastError();
+		MessageBox::Show(errMsg);
+		WSACloseEvent(gInfo->SendOverlapped.hEvent);
+		WSACleanup();
+		return;
 	}
-}
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: TCPSenderThread
---
--- DATE: February 02, 2014
---
--- REVISIONS: 
---
--- DESIGNER: Mat Siwoski
---
--- PROGRAMMER: Mat Siwoski
---
--- INTERFACE: DWORD WINAPI TCPSenderThread(LPVOID lpParameter)
---				LPVOID lpParameter: Void parameter passed by the thread. Information passed is the GoodInformation Struct
---
--- RETURNS: Return true upon success, False if there is an error.
---
--- NOTES:
--- This function is the thread for the TCP Send portion of the client. It will be sending out the information selected
--- by the amount selected by the user. The function will wait for multiple events and reset the event afterwards.
-------------------------------------------------------------------------------------------------------------------*/
-DWORD WINAPI TCPSenderThread(LPVOID lpParameter){
-	String^ errMsg		= gcnew String("error");
-	GoodInfo* gInfo		= (GoodInfo*) lpParameter;
-	DWORD Flags			= 0;
-	WSABUF DataBuf;
-	DataBuf.buf = gInfo->fileData;
-	DataBuf.len = gInfo->ctrlPktSizeGI;
+	if(sendto(gInfo->SenderSocket, DataBuf.buf, DataBuf.len, Flags, (SOCKADDR*) &(gInfo->InternetAddr), sizeof(gInfo->InternetAddr)) == SOCKET_ERROR){
+		errMsg = "Sending Control Packet failed. Error: " + GetLastError();
+		MessageBox::Show(errMsg);
+		return ;
+	}
+	if ((gInfo->ThreadHandle = CreateThread(NULL, 0, UDPSenderThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL){
+		errMsg = "CreateThread failed. Error: " + GetLastError();
+		MessageBox::Show(errMsg);
+		return;
+	}
 	
-	SecureZeroMemory((PVOID) &(gInfo->SendOverlapped), sizeof(WSAOVERLAPPED));
-	for (int i = 0; i < gInfo->numTimesSendingGI; i++){
-		if(WSASend(gInfo->SenderSocket, &DataBuf, 1, NULL, Flags, &(gInfo->SendOverlapped), NULL) == SOCKET_ERROR){
-			if( WSAGetLastError() != WSA_IO_PENDING){
-				errMsg = "WSASend failed" + WSAGetLastError();
-				MessageBox::Show(errMsg);
-				return -1;
-			}
-		}
-		WSAWaitForMultipleEvents(1, &(gInfo->SendOverlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
-		WSAResetEvent(gInfo->SendOverlapped.hEvent);
-	}
-	return 1;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -869,13 +623,13 @@ long delay (SYSTEMTIME t1, SYSTEMTIME t2)
 System::Void MyForm::openSong_Click(System::Object^  sender, System::EventArgs^  e){
 	String^ errMsg		= gcnew String("error");
 	int strc = 0;
-	char file[MAX_PATH]="C:/Users/Maciu/Desktop/Downloaded stuff/Music/Long May You Run - Stills Young Band.mp3";
+	//char file[MAX_PATH]="C:/Users/Maciu/Desktop/Downloaded stuff/Music/Long May You Run - Stills Young Band.mp3";
 	HSTREAM str;
-	if (str=BASS_StreamCreateFile(FALSE,file,0,0,0)) {
+	if (str=BASS_StreamCreateFile(FALSE,fileInfo->fileName,0,0,0)) {
 		strc++;
 		strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
 		strs[strc-1]=str;
-		STLM(LB_ADDSTRING,0,strrchr(file,'\\')+1);
+		STLM(LB_ADDSTRING,0,strrchr(fileInfo->fileName,'\\')+1);
 	} else {
 		errMsg = "Can't open stream";
 		MessageBox::Show(errMsg);

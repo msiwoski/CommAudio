@@ -26,7 +26,7 @@ public:
 private: System::Windows::Forms::Button^  playButton;
 private: System::Windows::Forms::Button^  stopButton;
 private: System::Windows::Forms::Button^  pauseButton;
-private: System::Windows::Forms::Button^  openSongButton;
+
 public: 
 
 public: 
@@ -57,25 +57,25 @@ private: System::Windows::Forms::RadioButton^  serverButton;
 private: System::Windows::Forms::RadioButton^  clientButton;
 private: System::Windows::Forms::GroupBox^  clientGroupBox;
 private: System::Windows::Forms::GroupBox^  serverGroupBox;
-private: System::Windows::Forms::ComboBox^  protocolTypeChooser;
-private: System::Windows::Forms::Label^  label1;
+
+
 private: System::Windows::Forms::Label^  Port;
 private: System::Windows::Forms::Label^  label5;
-private: System::Windows::Forms::Label^  label4;
-private: System::Windows::Forms::Label^  label3;
+
+
 private: System::Windows::Forms::Button^  sendButton;
 private: System::Windows::Forms::Button^  openButton;
 private: System::Windows::Forms::Label^  label2;
 private: System::Windows::Forms::Button^  receiveButton;
-private: System::Windows::Forms::Label^  label6;
-private: System::Windows::Forms::TextBox^  nameTextBox;
+
+
 private: System::Windows::Forms::TextBox^  ipAddressTextBox;
 private: System::Windows::Forms::Label^  label7;
 private: System::Windows::Forms::Button^  saveButton;
 private: System::Windows::Forms::OpenFileDialog^  openFileDialog1;
 private: System::Windows::Forms::SaveFileDialog^  saveFileDialog1;
-private: System::Windows::Forms::NumericUpDown^  pktSizeChoice;
-private: System::Windows::Forms::NumericUpDown^  sendTimesChoice;
+
+
 private: System::Windows::Forms::NumericUpDown^  portNumberChooser;
 
 private:
@@ -93,20 +93,12 @@ private:
 	{
 		this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
 		this->portNumberChooser = (gcnew System::Windows::Forms::NumericUpDown());
-		this->protocolTypeChooser = (gcnew System::Windows::Forms::ComboBox());
 		this->serverButton = (gcnew System::Windows::Forms::RadioButton());
-		this->label1 = (gcnew System::Windows::Forms::Label());
 		this->clientButton = (gcnew System::Windows::Forms::RadioButton());
 		this->Port = (gcnew System::Windows::Forms::Label());
 		this->clientGroupBox = (gcnew System::Windows::Forms::GroupBox());
-		this->pktSizeChoice = (gcnew System::Windows::Forms::NumericUpDown());
-		this->sendTimesChoice = (gcnew System::Windows::Forms::NumericUpDown());
-		this->label6 = (gcnew System::Windows::Forms::Label());
-		this->nameTextBox = (gcnew System::Windows::Forms::TextBox());
 		this->ipAddressTextBox = (gcnew System::Windows::Forms::TextBox());
 		this->label5 = (gcnew System::Windows::Forms::Label());
-		this->label4 = (gcnew System::Windows::Forms::Label());
-		this->label3 = (gcnew System::Windows::Forms::Label());
 		this->sendButton = (gcnew System::Windows::Forms::Button());
 		this->openButton = (gcnew System::Windows::Forms::Button());
 		this->label2 = (gcnew System::Windows::Forms::Label());
@@ -119,21 +111,18 @@ private:
 		this->playButton = (gcnew System::Windows::Forms::Button());
 		this->stopButton = (gcnew System::Windows::Forms::Button());
 		this->pauseButton = (gcnew System::Windows::Forms::Button());
-		this->openSongButton = (gcnew System::Windows::Forms::Button());
 		this->groupBox1->SuspendLayout();
 		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->portNumberChooser))->BeginInit();
 		this->clientGroupBox->SuspendLayout();
-		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->pktSizeChoice))->BeginInit();
-		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->sendTimesChoice))->BeginInit();
 		this->serverGroupBox->SuspendLayout();
 		this->SuspendLayout();
 		// 
 		// groupBox1
 		// 
+		this->groupBox1->Controls->Add(this->ipAddressTextBox);
 		this->groupBox1->Controls->Add(this->portNumberChooser);
-		this->groupBox1->Controls->Add(this->protocolTypeChooser);
+		this->groupBox1->Controls->Add(this->label5);
 		this->groupBox1->Controls->Add(this->serverButton);
-		this->groupBox1->Controls->Add(this->label1);
 		this->groupBox1->Controls->Add(this->clientButton);
 		this->groupBox1->Controls->Add(this->Port);
 		this->groupBox1->Location = System::Drawing::Point(21, 18);
@@ -153,17 +142,6 @@ private:
 		this->portNumberChooser->TabIndex = 4;
 		this->portNumberChooser->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) {5150, 0, 0, 0});
 		// 
-		// protocolTypeChooser
-		// 
-		this->protocolTypeChooser->DropDownStyle = System::Windows::Forms::ComboBoxStyle::DropDownList;
-		this->protocolTypeChooser->FormattingEnabled = true;
-		this->protocolTypeChooser->Items->AddRange(gcnew cli::array< System::Object^  >(2) {L"TCP", L"UDP"});
-		this->protocolTypeChooser->Location = System::Drawing::Point(451, 26);
-		this->protocolTypeChooser->MaxDropDownItems = 2;
-		this->protocolTypeChooser->Name = L"protocolTypeChooser";
-		this->protocolTypeChooser->Size = System::Drawing::Size(114, 21);
-		this->protocolTypeChooser->TabIndex = 3;
-		// 
 		// serverButton
 		// 
 		this->serverButton->AutoSize = true;
@@ -175,15 +153,6 @@ private:
 		this->serverButton->Text = L"Server";
 		this->serverButton->UseVisualStyleBackColor = true;
 		this->serverButton->Click += gcnew System::EventHandler(this, &MyForm::serverButton_Click);
-		// 
-		// label1
-		// 
-		this->label1->AutoSize = true;
-		this->label1->Location = System::Drawing::Point(372, 29);
-		this->label1->Name = L"label1";
-		this->label1->Size = System::Drawing::Size(76, 13);
-		this->label1->TabIndex = 2;
-		this->label1->Text = L"Protocol Type:";
 		// 
 		// clientButton
 		// 
@@ -208,17 +177,12 @@ private:
 		// 
 		// clientGroupBox
 		// 
-		this->clientGroupBox->Controls->Add(this->pktSizeChoice);
-		this->clientGroupBox->Controls->Add(this->sendTimesChoice);
-		this->clientGroupBox->Controls->Add(this->label6);
-		this->clientGroupBox->Controls->Add(this->nameTextBox);
-		this->clientGroupBox->Controls->Add(this->ipAddressTextBox);
-		this->clientGroupBox->Controls->Add(this->label5);
-		this->clientGroupBox->Controls->Add(this->label4);
-		this->clientGroupBox->Controls->Add(this->label3);
 		this->clientGroupBox->Controls->Add(this->sendButton);
+		this->clientGroupBox->Controls->Add(this->pauseButton);
 		this->clientGroupBox->Controls->Add(this->openButton);
+		this->clientGroupBox->Controls->Add(this->stopButton);
 		this->clientGroupBox->Controls->Add(this->label2);
+		this->clientGroupBox->Controls->Add(this->playButton);
 		this->clientGroupBox->Location = System::Drawing::Point(23, 97);
 		this->clientGroupBox->Name = L"clientGroupBox";
 		this->clientGroupBox->Size = System::Drawing::Size(267, 263);
@@ -226,77 +190,22 @@ private:
 		this->clientGroupBox->TabStop = false;
 		this->clientGroupBox->Text = L"Client";
 		// 
-		// pktSizeChoice
-		// 
-		this->pktSizeChoice->Increment = System::Decimal(gcnew cli::array< System::Int32 >(4) {1024, 0, 0, 0});
-		this->pktSizeChoice->Location = System::Drawing::Point(90, 76);
-		this->pktSizeChoice->Maximum = System::Decimal(gcnew cli::array< System::Int32 >(4) {262144, 0, 0, 0});
-		this->pktSizeChoice->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) {1024, 0, 0, 0});
-		this->pktSizeChoice->Name = L"pktSizeChoice";
-		this->pktSizeChoice->Size = System::Drawing::Size(158, 20);
-		this->pktSizeChoice->TabIndex = 12;
-		this->pktSizeChoice->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) {1024, 0, 0, 0});
-		// 
-		// sendTimesChoice
-		// 
-		this->sendTimesChoice->Location = System::Drawing::Point(90, 103);
-		this->sendTimesChoice->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) {1, 0, 0, 0});
-		this->sendTimesChoice->Name = L"sendTimesChoice";
-		this->sendTimesChoice->Size = System::Drawing::Size(158, 20);
-		this->sendTimesChoice->TabIndex = 11;
-		this->sendTimesChoice->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) {1, 0, 0, 0});
-		// 
-		// label6
-		// 
-		this->label6->AutoSize = true;
-		this->label6->Location = System::Drawing::Point(46, 159);
-		this->label6->Name = L"label6";
-		this->label6->Size = System::Drawing::Size(38, 13);
-		this->label6->TabIndex = 10;
-		this->label6->Text = L"Name:";
-		// 
-		// nameTextBox
-		// 
-		this->nameTextBox->Location = System::Drawing::Point(90, 156);
-		this->nameTextBox->Name = L"nameTextBox";
-		this->nameTextBox->Size = System::Drawing::Size(158, 20);
-		this->nameTextBox->TabIndex = 9;
-		this->nameTextBox->Text = L"localhost";
-		// 
 		// ipAddressTextBox
 		// 
-		this->ipAddressTextBox->Location = System::Drawing::Point(90, 129);
+		this->ipAddressTextBox->Location = System::Drawing::Point(449, 27);
 		this->ipAddressTextBox->Name = L"ipAddressTextBox";
-		this->ipAddressTextBox->Size = System::Drawing::Size(158, 20);
+		this->ipAddressTextBox->Size = System::Drawing::Size(116, 20);
 		this->ipAddressTextBox->TabIndex = 8;
 		this->ipAddressTextBox->Text = L"127.0.0.1";
 		// 
 		// label5
 		// 
 		this->label5->AutoSize = true;
-		this->label5->Location = System::Drawing::Point(21, 132);
+		this->label5->Location = System::Drawing::Point(382, 29);
 		this->label5->Name = L"label5";
 		this->label5->Size = System::Drawing::Size(61, 13);
 		this->label5->TabIndex = 7;
 		this->label5->Text = L"IP Address:";
-		// 
-		// label4
-		// 
-		this->label4->AutoSize = true;
-		this->label4->Location = System::Drawing::Point(22, 105);
-		this->label4->Name = L"label4";
-		this->label4->Size = System::Drawing::Size(60, 13);
-		this->label4->TabIndex = 6;
-		this->label4->Text = L"# of Times:";
-		// 
-		// label3
-		// 
-		this->label3->AutoSize = true;
-		this->label3->Location = System::Drawing::Point(15, 78);
-		this->label3->Name = L"label3";
-		this->label3->Size = System::Drawing::Size(67, 13);
-		this->label3->TabIndex = 3;
-		this->label3->Text = L"Packet Size:";
 		// 
 		// sendButton
 		// 
@@ -375,7 +284,7 @@ private:
 		// 
 		// playButton
 		// 
-		this->playButton->Location = System::Drawing::Point(620, 18);
+		this->playButton->Location = System::Drawing::Point(12, 76);
 		this->playButton->Name = L"playButton";
 		this->playButton->Size = System::Drawing::Size(75, 23);
 		this->playButton->TabIndex = 3;
@@ -385,7 +294,7 @@ private:
 		// 
 		// stopButton
 		// 
-		this->stopButton->Location = System::Drawing::Point(620, 47);
+		this->stopButton->Location = System::Drawing::Point(93, 76);
 		this->stopButton->Name = L"stopButton";
 		this->stopButton->Size = System::Drawing::Size(75, 23);
 		this->stopButton->TabIndex = 4;
@@ -395,7 +304,7 @@ private:
 		// 
 		// pauseButton
 		// 
-		this->pauseButton->Location = System::Drawing::Point(620, 77);
+		this->pauseButton->Location = System::Drawing::Point(174, 76);
 		this->pauseButton->Name = L"pauseButton";
 		this->pauseButton->Size = System::Drawing::Size(75, 23);
 		this->pauseButton->TabIndex = 5;
@@ -403,25 +312,11 @@ private:
 		this->pauseButton->UseVisualStyleBackColor = true;
 		this->pauseButton->Click += gcnew System::EventHandler(this, &MyForm::pauseButton_Click);
 		// 
-		// openSongButton
-		// 
-		this->openSongButton->Location = System::Drawing::Point(620, 124);
-		this->openSongButton->Name = L"openSongButton";
-		this->openSongButton->Size = System::Drawing::Size(75, 23);
-		this->openSongButton->TabIndex = 6;
-		this->openSongButton->Text = L"Open Song";
-		this->openSongButton->UseVisualStyleBackColor = true;
-		this->openSongButton->Click += gcnew System::EventHandler(this, &MyForm::openSong_Click);
-		// 
 		// MyForm
 		// 
 		this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 		this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-		this->ClientSize = System::Drawing::Size(750, 371);
-		this->Controls->Add(this->openSongButton);
-		this->Controls->Add(this->pauseButton);
-		this->Controls->Add(this->stopButton);
-		this->Controls->Add(this->playButton);
+		this->ClientSize = System::Drawing::Size(594, 371);
 		this->Controls->Add(this->serverGroupBox);
 		this->Controls->Add(this->clientGroupBox);
 		this->Controls->Add(this->groupBox1);
@@ -433,8 +328,6 @@ private:
 		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->portNumberChooser))->EndInit();
 		this->clientGroupBox->ResumeLayout(false);
 		this->clientGroupBox->PerformLayout();
-		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->pktSizeChoice))->EndInit();
-		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->sendTimesChoice))->EndInit();
 		this->serverGroupBox->ResumeLayout(false);
 		this->serverGroupBox->PerformLayout();
 		this->ResumeLayout(false);
