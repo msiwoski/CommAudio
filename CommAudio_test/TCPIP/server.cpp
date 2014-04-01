@@ -12,9 +12,11 @@ SYSTEMTIME stSysTime;
 //HSAMPLE *sams	= NULL;
 //HSAMPLE sam;
 /* testing the music file?!?!*/
-HSTREAM *strs	=	NULL;
-HSTREAM str;
-int strc=0;
+DWORD outdev[2];	// output devices
+DWORD latency[2];	// latencies
+HSTREAM chan[2];	// the streams
+
+FILE *fp;
 
 int init_server(int port)
 {
@@ -124,9 +126,49 @@ void play(char *filename)
 			//MessageBox::Show(errMsg);
 		}*/
 
+
+		BASS_ChannelSetDSP(stream,&DSP,0,0);
+
 		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
 			//errMsg = "Can't open stream";
 			//MessageBox::Show(errMsg);
 		//}
 	}
+}
+
+HDSP fladsp=0;	// DSP handle
+#define FLABUFLEN 350	// buffer length
+float flabuf[FLABUFLEN][2];	// buffer
+int flapos;	// cur.pos
+float flas,flasinc;	// sweep pos/increment
+void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
+{
+	short *s=(short *)buffer;
+    for (; length; length-=4, s+=2) {
+        /*short temp=s[0];
+        s[0]=s[1];
+        s[1]=temp;*/
+		s[0]*=2;
+    }
+
+	/*short *s = (short *)buffer;
+
+	for (; length; length-=4, s+=2)
+	{
+		fp = fopen("log.mp3", "ab");
+		fwrite(&s[0], 1, sizeof(s[0]), fp);
+		fclose(fp);
+	}*/
+	//BASS_StreamPutData((HSTREAM)user,buffer,length);
+	/*float *d=(float*)buffer;
+	float c;
+	DWORD a;
+
+	fp = fopen("log.mp3", "ab");
+	for (a=0;a<length/4;a+=2) 
+	{
+		c = d[a];
+		fwrite(&c, 1, sizeof(d), fp);
+	}
+	fclose(fp);*/
 }

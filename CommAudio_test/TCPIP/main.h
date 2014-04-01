@@ -45,7 +45,7 @@ typedef struct _SOCKET_INFORMATION
 void run_server();
 int init_server(int port);
 void play(char *filename);
-
+void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user);
 
 
 DWORD WINAPI UDPWorkerThread(LPVOID lpParameter);
