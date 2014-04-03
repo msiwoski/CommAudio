@@ -30,19 +30,17 @@ u_short nInterval          = TIMECAST_INTRVL;
 SYSTEMTIME stSysTime;
 
 
-<<<<<<< HEAD
 BASS_CHANNELINFO info;
 WAVEFORMATEX wf;
 DWORD chan,p;
 short buf[1024];
 
-=======
+
 /* testing the music file?!?!*/
 DWORD outdev[2];	// output devices
 DWORD latency[2];	// latencies
-HSTREAM chan[2];	// the streams
-	int stream;
->>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
+//HSTREAM chan;	// the streams
+int stream;
 FILE *fp;
 
 int init_server(int port)
@@ -140,7 +138,7 @@ void run_server()
 
 void play(char *filename)
 {
-<<<<<<< HEAD
+
 	//BASS_CHANNELINFO info;
 	//WAVEFORMATEX wf;
 	//DWORD chan,p;
@@ -247,9 +245,6 @@ void play(char *filename)
 			}
 		}
 	}
-}
-
-=======
 
 
 	if (filename!=NULL)
@@ -295,7 +290,6 @@ void playPause(char *filename){
 	}
 }
 
->>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
 {
 	
