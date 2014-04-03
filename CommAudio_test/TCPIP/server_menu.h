@@ -372,14 +372,10 @@ namespace TCPIP {
 	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 if (this->pauseButton->Text == L"Pause"){
-				 String^ errMsg		= gcnew String("error");
-				 errMsg	= "Can't Create Stream File";
-				 /*int s	= GETMOD();
-				 if (s != LB_ERR) {
-					 BASS_ChannelPause(strs[s]);	//pause the music
-				 }*/
-				 pause(fileName);
-				 this->pauseButton->Text = L"Continue";
+					String^ errMsg		= gcnew String("error");
+					errMsg				= "Can't Create Stream File";
+					pause(fileName);
+					this->pauseButton->Text = L"Continue";
 				 }else{
 					 this->pauseButton->Text = L"Pause";
 					 playPause(fileName);

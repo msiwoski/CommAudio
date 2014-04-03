@@ -149,9 +149,11 @@ void pause(char *filename){
 }
 
 void playPause(char *filename){
-	BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+	}
 }
-
 
 void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
 {
