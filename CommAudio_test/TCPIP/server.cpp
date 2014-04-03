@@ -30,11 +30,19 @@ u_short nInterval          = TIMECAST_INTRVL;
 SYSTEMTIME stSysTime;
 
 
+<<<<<<< HEAD
 BASS_CHANNELINFO info;
 WAVEFORMATEX wf;
 DWORD chan,p;
 short buf[1024];
 
+=======
+/* testing the music file?!?!*/
+DWORD outdev[2];	// output devices
+DWORD latency[2];	// latencies
+HSTREAM chan[2];	// the streams
+	int stream;
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 FILE *fp;
 
 int init_server(int port)
@@ -132,6 +140,7 @@ void run_server()
 
 void play(char *filename)
 {
+<<<<<<< HEAD
 	//BASS_CHANNELINFO info;
 	//WAVEFORMATEX wf;
 	//DWORD chan,p;
@@ -240,6 +249,53 @@ void play(char *filename)
 	}
 }
 
+=======
+
+
+	if (filename!=NULL)
+	{
+		stream = BASS_StreamCreateFile(FALSE,filename,0,0,0);
+		/*{
+			strc++;
+			strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
+			strs[strc-1]=str;
+			//errMsg = "Can't open stream";
+			//MessageBox::Show(errMsg);
+		}*/
+
+
+		BASS_ChannelSetDSP(stream,&DSP,0,0);
+
+		BASS_ChannelPlay(stream, TRUE); // play the stream (continue from current position)
+			//errMsg = "Can't open stream";
+			//MessageBox::Show(errMsg);
+		//}
+	}
+}
+
+void stop(char *filename)
+{
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelStop(stream); // stop the music
+	}
+}
+
+void pause(char *filename){
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelPause(stream);	//pause the music
+	}
+}
+
+void playPause(char *filename){
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+	}
+}
+
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
 {
 	

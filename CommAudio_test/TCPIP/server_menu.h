@@ -28,6 +28,7 @@ namespace TCPIP {
 	{
 		int i;
 		HWND hwnd;
+		char *fileName;
 	public:
 		server_menu(void)
 		{
@@ -356,16 +357,31 @@ namespace TCPIP {
 			 }
 	private: System::Void playButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
+<<<<<<< HEAD
 				 if(i == 0)
 				 {
 					 backgroundWorker1->RunWorkerAsync();
 				 }else
 					 BASS_Start();
+=======
+				 
+				 pin_ptr<const wchar_t> tempFileName;
+
+				 if(FileTextBox->Text != "")
+				 {
+					 tempFileName = PtrToStringChars(this->FileTextBox->Text);
+					 fileName = (char*) malloc(sizeof(tempFileName));
+					 wcstombs_s(0, fileName, wcslen(tempFileName) + 1, tempFileName, _TRUNCATE);
+				 }
+				 play(fileName);
+				 this->pauseButton->Text = L"Pause";
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 			 }
 	private: System::Void stopButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 String^ errMsg		= gcnew String("error");
 				 errMsg = "Can't Create Stream File";
+<<<<<<< HEAD
 
 				 BASS_Stop();
 			 }
@@ -375,6 +391,23 @@ namespace TCPIP {
 				 errMsg	= "Can't Create Stream File";
 
 				 BASS_Pause();
+=======
+				 stop(fileName);
+				 this->pauseButton->Text = L"Pause";
+				 
+			 }
+	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
+			 {
+				 if (this->pauseButton->Text == L"Pause"){
+					String^ errMsg		= gcnew String("error");
+					errMsg				= "Can't Create Stream File";
+					pause(fileName);
+					this->pauseButton->Text = L"Continue";
+				 }else{
+					 this->pauseButton->Text = L"Pause";
+					 playPause(fileName);
+				 }
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 			 }
 	private: System::Void FileDirButton_Click_1(System::Object^  sender, System::EventArgs^  e) 
 			 {

@@ -43,7 +43,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+<<<<<<< HEAD
     <LibraryPath>C:\Users\opk1\Desktop\bass24\c;$(LibraryPath)</LibraryPath>
+=======
+    <LibraryPath>C:\Users\Maciu\Desktop\Bass\c;C:\Users\User\Desktop\c;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Maciu\Desktop\Bass\c;$(IncludePath)</IncludePath>
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
