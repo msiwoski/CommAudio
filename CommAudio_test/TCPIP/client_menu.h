@@ -65,6 +65,7 @@ namespace TCPIP
 
 
 
+
 	private:
 		/// <summary>
 		/// Required designer variable.
@@ -265,6 +266,7 @@ namespace TCPIP
 				 multicast_connect(outputListBox, ip, port);
 				 run_client(outputListBox);
 			 }
+
 };
 }
 
