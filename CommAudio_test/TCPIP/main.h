@@ -45,6 +45,9 @@ typedef struct _SOCKET_INFORMATION
 void run_server();
 int init_server(int port);
 void play(char *filename);
+void stop(char *filename);
+void pause(char *filename);
+void playPause(char *filename);
 void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user);
 
 

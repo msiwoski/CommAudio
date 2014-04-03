@@ -27,6 +27,7 @@ namespace TCPIP {
 	public ref class server_menu : public System::Windows::Forms::Form
 	{
 		HWND hwnd;
+		char *fileName;
 	public:
 		server_menu(void)
 		{
@@ -348,7 +349,7 @@ namespace TCPIP {
 			 }
 	private: System::Void playButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
-				 char *fileName;
+				 
 				 pin_ptr<const wchar_t> tempFileName;
 
 				 if(FileTextBox->Text != "")
@@ -358,24 +359,31 @@ namespace TCPIP {
 					 wcstombs_s(0, fileName, wcslen(tempFileName) + 1, tempFileName, _TRUNCATE);
 				 }
 				 play(fileName);
+				 this->pauseButton->Text = L"Pause";
 			 }
 	private: System::Void stopButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 String^ errMsg		= gcnew String("error");
 				 errMsg = "Can't Create Stream File";
-
-				 /*if (s!=LB_ERR) {
-					 BASS_ChannelStop(strs[s]); // stop the music
-				 }*/
+				 stop(fileName);
+				 this->pauseButton->Text = L"Pause";
+				 
 			 }
 	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
+				 if (this->pauseButton->Text == L"Pause"){
 				 String^ errMsg		= gcnew String("error");
 				 errMsg	= "Can't Create Stream File";
 				 /*int s	= GETMOD();
 				 if (s != LB_ERR) {
 					 BASS_ChannelPause(strs[s]);	//pause the music
 				 }*/
+				 pause(fileName);
+				 this->pauseButton->Text = L"Continue";
+				 }else{
+					 this->pauseButton->Text = L"Pause";
+					 playPause(fileName);
+				 }
 			 }
 	private: System::Void FileDirButton_Click_1(System::Object^  sender, System::EventArgs^  e) 
 			 {

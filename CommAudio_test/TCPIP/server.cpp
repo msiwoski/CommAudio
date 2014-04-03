@@ -12,7 +12,7 @@ SYSTEMTIME stSysTime;
 DWORD outdev[2];	// output devices
 DWORD latency[2];	// latencies
 HSTREAM chan[2];	// the streams
-
+	int stream;
 FILE *fp;
 
 int init_server(int port)
@@ -110,7 +110,7 @@ void run_server()
 
 void play(char *filename)
 {
-	int stream;
+
 
 	if (filename!=NULL)
 	{
@@ -126,11 +126,30 @@ void play(char *filename)
 
 		BASS_ChannelSetDSP(stream,&DSP,0,0);
 
-		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+		BASS_ChannelPlay(stream, TRUE); // play the stream (continue from current position)
 			//errMsg = "Can't open stream";
 			//MessageBox::Show(errMsg);
 		//}
 	}
+}
+
+void stop(char *filename)
+{
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelStop(stream); // stop the music
+	}
+}
+
+void pause(char *filename){
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelPause(stream);	//pause the music
+	}
+}
+
+void playPause(char *filename){
+	BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
 }
 
 
