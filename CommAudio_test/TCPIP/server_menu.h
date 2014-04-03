@@ -26,12 +26,14 @@ namespace TCPIP {
 	/// </summary>
 	public ref class server_menu : public System::Windows::Forms::Form
 	{
+		int i;
 		HWND hwnd;
+		char *fileName;
 	public:
 		server_menu(void)
 		{
 			InitializeComponent();
-			if (!BASS_Init(-1,44100,0,hwnd,NULL))
+			if (!BASS_Init(-1,44100,BASS_SAMPLE_MONO,hwnd,NULL))
 			{
 				MessageBox::Show("Can't initialize device");
 				return;
@@ -119,6 +121,7 @@ namespace TCPIP {
 	private: System::Windows::Forms::Button^  stopButton;
 	private: System::Windows::Forms::Button^  pauseButton;
 	private: System::Windows::Forms::Button^  FileDirButton;
+	private: System::ComponentModel::BackgroundWorker^  backgroundWorker1;
 
 
 
@@ -150,6 +153,7 @@ namespace TCPIP {
 			this->stopButton = (gcnew System::Windows::Forms::Button());
 			this->pauseButton = (gcnew System::Windows::Forms::Button());
 			this->FileDirButton = (gcnew System::Windows::Forms::Button());
+			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
 			this->SuspendLayout();
 			// 
 			// ListenButton
@@ -268,6 +272,11 @@ namespace TCPIP {
 			this->FileDirButton->UseVisualStyleBackColor = true;
 			this->FileDirButton->Click += gcnew System::EventHandler(this, &server_menu::FileDirButton_Click_1);
 			// 
+			// backgroundWorker1
+			// 
+			this->backgroundWorker1->WorkerSupportsCancellation = true;
+			this->backgroundWorker1->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &server_menu::backgroundWorker1_DoWork);
+			// 
 			// server_menu
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
@@ -317,15 +326,15 @@ namespace TCPIP {
 					 port = System::Int32::Parse(PortTextBox->Text);
 
 
-				 if (!BASS_Init(-1,44100,0,hwnd,NULL))
+				 /*if (!BASS_Init(-1,44100,0,hwnd,NULL))
 				 {
-					 errMsg = "Can't initialize device";
-					 MessageBox::Show(errMsg);
-					 return;
-				 }
+				 errMsg = "Can't initialize device";
+				 MessageBox::Show(errMsg);
+				 return;
+				 }*/
 
 				 init_server(port);
-				 run_server();
+				 //run_server();
 			 }
 	private: System::Void CloseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
@@ -348,7 +357,14 @@ namespace TCPIP {
 			 }
 	private: System::Void playButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
-				 char *fileName;
+<<<<<<< HEAD
+				 if(i == 0)
+				 {
+					 backgroundWorker1->RunWorkerAsync();
+				 }else
+					 BASS_Start();
+=======
+				 
 				 pin_ptr<const wchar_t> tempFileName;
 
 				 if(FileTextBox->Text != "")
@@ -358,31 +374,62 @@ namespace TCPIP {
 					 wcstombs_s(0, fileName, wcslen(tempFileName) + 1, tempFileName, _TRUNCATE);
 				 }
 				 play(fileName);
+				 this->pauseButton->Text = L"Pause";
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 			 }
 	private: System::Void stopButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 String^ errMsg		= gcnew String("error");
 				 errMsg = "Can't Create Stream File";
+<<<<<<< HEAD
 
-				 /*if (s!=LB_ERR) {
-					 BASS_ChannelStop(strs[s]); // stop the music
-				 }*/
+				 BASS_Stop();
 			 }
 	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 String^ errMsg		= gcnew String("error");
 				 errMsg	= "Can't Create Stream File";
-				 /*int s	= GETMOD();
-				 if (s != LB_ERR) {
-					 BASS_ChannelPause(strs[s]);	//pause the music
-				 }*/
+
+				 BASS_Pause();
+=======
+				 stop(fileName);
+				 this->pauseButton->Text = L"Pause";
+				 
+			 }
+	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
+			 {
+				 if (this->pauseButton->Text == L"Pause"){
+					String^ errMsg		= gcnew String("error");
+					errMsg				= "Can't Create Stream File";
+					pause(fileName);
+					this->pauseButton->Text = L"Continue";
+				 }else{
+					 this->pauseButton->Text = L"Pause";
+					 playPause(fileName);
+				 }
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 			 }
 	private: System::Void FileDirButton_Click_1(System::Object^  sender, System::EventArgs^  e) 
 			 {
 				 openFileDialog1->ShowDialog();
 				 FileTextBox->Text = openFileDialog1->FileName;
 			 }
-};
+	private: System::Void backgroundWorker1_DoWork(System::Object^  sender, System::ComponentModel::DoWorkEventArgs^  e) 
+			 {
+				 char *fileName;
+				 pin_ptr<const wchar_t> tempFileName;
+
+				 i= 1;
+				 if(FileTextBox->Text != "")
+				 {
+					 tempFileName = PtrToStringChars(this->FileTextBox->Text);
+					 fileName = (char*) malloc(sizeof(tempFileName));
+					 wcstombs_s(0, fileName, wcslen(tempFileName) + 1, tempFileName, _TRUNCATE);
+				 }
+				 play(fileName);
+
+			 }
+	};
 }
 
 #endif

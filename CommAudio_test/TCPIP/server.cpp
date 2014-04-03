@@ -1,4 +1,26 @@
 #include "server_menu.h"
+
+#include <conio.h>
+
+
+
+#ifdef _BIG_ENDIAN
+inline DWORD le_32(DWORD v)
+{
+	return (v>>24)|((v>>8)&0xff00)|((v&0xff00)<<8)|(v<<24);
+}
+inline WORD le_16(WORD v)
+{
+	return (v>>8)|(v<<8);
+}
+#else
+#define le_32(v) (v)
+#define le_16(v) (v)
+#endif
+
+
+
+
 /* handle to form */
 HWND ghwnd;
 LPSOCKET_INFORMATION server_SocketInfo;
@@ -8,14 +30,19 @@ u_short nInterval          = TIMECAST_INTRVL;
 SYSTEMTIME stSysTime;
 
 
-/* ADDING THE BASS LIBRARY!!!! */
-//HSAMPLE *sams	= NULL;
-//HSAMPLE sam;
+<<<<<<< HEAD
+BASS_CHANNELINFO info;
+WAVEFORMATEX wf;
+DWORD chan,p;
+short buf[1024];
+
+=======
 /* testing the music file?!?!*/
 DWORD outdev[2];	// output devices
 DWORD latency[2];	// latencies
 HSTREAM chan[2];	// the streams
-
+	int stream;
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 FILE *fp;
 
 int init_server(int port)
@@ -113,7 +140,117 @@ void run_server()
 
 void play(char *filename)
 {
-	int stream;
+<<<<<<< HEAD
+	//BASS_CHANNELINFO info;
+	//WAVEFORMATEX wf;
+	//DWORD chan,p;
+	//short buf[1000];
+
+	if (filename!=NULL)
+	{
+		chan = BASS_StreamCreateFile(FALSE,filename,0,0,BASS_SAMPLE_MONO);
+
+		//BASS_ChannelSetDSP(chan,&DSP,0,0);
+		BASS_ChannelPlay(chan, FALSE);
+
+		/*fp = fopen("log.WAV", "wb");
+
+		BASS_ChannelGetInfo(chan,&info);
+		wf.wFormatTag=1;
+		wf.nChannels=info.chans;
+		wf.wBitsPerSample=(info.flags&BASS_SAMPLE_8BITS?8:16);
+		wf.nBlockAlign=wf.nChannels*wf.wBitsPerSample/8;
+		wf.nSamplesPerSec=info.freq;
+		wf.nAvgBytesPerSec=wf.nSamplesPerSec*wf.nBlockAlign;
+
+		fwrite("RIFF\0\0\0\0WAVEfmt \20\0\0\0",20,1,fp);
+		fwrite(&wf,16,1,fp);
+		fwrite("data\0\0\0\0",8,1,fp);
+
+		while(1)
+		{
+			while (!_kbhit() && (BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING)) 
+			{
+			int c=BASS_ChannelGetData(chan,buf,1024);
+			fwrite(buf,1,c,fp);
+			}
+		}
+
+		fflush(fp);
+		p=ftell(fp);
+		fseek(fp,4,SEEK_SET);
+		putw(le_32(p-8),fp);
+		fflush(fp);
+		fseek(fp,40,SEEK_SET);
+		putw(le_32(p-44),fp);
+		fflush(fp);
+		fclose(fp);*/
+
+
+		
+		int nRet2;
+		int q;
+		DWORD Flags = 0;
+
+		if((server_SocketInfo->Overlapped.hEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
+			WSACleanup();
+			return;
+		}
+
+		BASS_ChannelGetInfo(chan,&info);
+		wf.wFormatTag=1;
+		wf.nChannels=info.chans;
+		wf.wBitsPerSample=(info.flags&BASS_SAMPLE_8BITS?8:16);
+		wf.nBlockAlign=wf.nChannels*wf.wBitsPerSample/8;
+		wf.nSamplesPerSec=info.freq;
+		wf.nAvgBytesPerSec=wf.nSamplesPerSec*wf.nBlockAlign;
+
+		memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
+
+		strcpy(server_SocketInfo->Buffer, "RIFF\0\0\0\0WAVEfmt \20\0\0\0");
+		strcat(server_SocketInfo->Buffer, (char *)&wf);
+		strcat(server_SocketInfo->Buffer, "data\0\0\0\0");
+
+		server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
+		server_SocketInfo->DataBuf.len = sizeof(server_SocketInfo->Buffer);
+
+		if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
+			if (WSAGetLastError() != WSA_IO_PENDING){
+				//error message
+				q = WSAGetLastError();
+				q = 0;
+			}
+		}
+		WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+		WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
+
+		while(1)
+		{
+			while (!_kbhit() && (BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING)) 
+			{
+				memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
+				int c = BASS_ChannelGetData(chan,buf,1024);
+				strcpy(server_SocketInfo->Buffer, (char *)&buf);
+
+				server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
+				server_SocketInfo->DataBuf.len = c;
+
+				if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
+					if (WSAGetLastError() != WSA_IO_PENDING){
+						//error message
+						q = WSAGetLastError();
+						q = 0;
+					}
+				}
+				WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+				WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
+			}
+		}
+	}
+}
+
+=======
+
 
 	if (filename!=NULL)
 	{
@@ -129,46 +266,83 @@ void play(char *filename)
 
 		BASS_ChannelSetDSP(stream,&DSP,0,0);
 
-		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+		BASS_ChannelPlay(stream, TRUE); // play the stream (continue from current position)
 			//errMsg = "Can't open stream";
 			//MessageBox::Show(errMsg);
 		//}
 	}
 }
 
-HDSP fladsp=0;	// DSP handle
-#define FLABUFLEN 350	// buffer length
-float flabuf[FLABUFLEN][2];	// buffer
-int flapos;	// cur.pos
-float flas,flasinc;	// sweep pos/increment
+void stop(char *filename)
+{
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelStop(stream); // stop the music
+	}
+}
+
+void pause(char *filename){
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelPause(stream);	//pause the music
+	}
+}
+
+void playPause(char *filename){
+	if (filename!=NULL && stream != NULL)
+	{
+		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+	}
+}
+
+>>>>>>> 6dcebadf4aeeeaee1b952a22d960e73ef8f90119
 void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
 {
-	short *s=(short *)buffer;
-    for (; length; length-=4, s+=2) {
-        /*short temp=s[0];
-        s[0]=s[1];
-        s[1]=temp;*/
-		s[0]*=2;
-    }
+	
 
-	/*short *s = (short *)buffer;
-
-	for (; length; length-=4, s+=2)
-	{
-		fp = fopen("log.mp3", "ab");
-		fwrite(&s[0], 1, sizeof(s[0]), fp);
-		fclose(fp);
-	}*/
-	//BASS_StreamPutData((HSTREAM)user,buffer,length);
-	/*float *d=(float*)buffer;
-	float c;
-	DWORD a;
-
-	fp = fopen("log.mp3", "ab");
-	for (a=0;a<length/4;a+=2) 
-	{
-		c = d[a];
-		fwrite(&c, 1, sizeof(d), fp);
-	}
-	fclose(fp);*/
 }
+
+
+/*
+SERVER==================================================
+BASS_RecordInit(-1); // initialize default recording device
+record=BASS_RecordStart(freq, chans, 0, RecordProc, 0); // start recording
+BASS_Encode_Start(record, "lame -", 0, EncodeProc, 0); // set an MP3 encoder (LAME) on it
+
+...
+
+// the recording callback
+BOOL CALLBACK RecordProc(HRECORD handle, void *buffer, DWORD length, void *user)
+{
+return TRUE; // just continue recording
+}
+
+// the encoding callback
+void CALLBACK EncodeProc(HENCODE handle, DWORD channel, void *buffer, DWORD length, void *user)
+{
+// send "length" bytes of data in "buffer" to the client
+}
+
+
+CLIENT====================================
+void CALLBACK FileCloseProc(void *user)
+{
+// close the connection
+}
+
+QWORD CALLBACK FileLenProc(void *user)
+{
+return 0; // indeterminate length
+}
+
+DWORD CALLBACK FileReadProc(void *buffer, DWORD length, void *user)
+{
+// read up to "length" bytes of data from the server
+}
+
+...
+
+BASS_FILEPROCS fileprocs={FileCloseProc, FileLenProc, FileReadProc, NULL}; // callback table
+stream=BASS_StreamCreateFileUser(STREAMFILE_BUFFER, 0, &fileprocs, 0); // create the stream
+BASS_ChannelPlay(stream, 0); // start playing
+*/
