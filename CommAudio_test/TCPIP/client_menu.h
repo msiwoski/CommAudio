@@ -128,6 +128,7 @@ namespace TCPIP
 			this->IPTextBox->Name = L"IPTextBox";
 			this->IPTextBox->Size = System::Drawing::Size(100, 20);
 			this->IPTextBox->TabIndex = 4;
+			this->IPTextBox->Text = L"234.5.6.7";
 			// 
 			// PortTextBox
 			// 
@@ -135,6 +136,7 @@ namespace TCPIP
 			this->PortTextBox->Name = L"PortTextBox";
 			this->PortTextBox->Size = System::Drawing::Size(100, 20);
 			this->PortTextBox->TabIndex = 5;
+			this->PortTextBox->Text = L"8190";
 			// 
 			// outputListBox
 			// 

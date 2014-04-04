@@ -66,7 +66,8 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 	BOOL  fFlag;
 	struct ip_mreq stMreq;
 	WSADATA stWSAData;
-
+	DWORD RecvBytes				= 0;
+	DWORD Flags					= 0;
 	WSAStartup(0x0202, &stWSAData);
 
 	if ((SocketInfo = (LPSOCKET_INFORMATION) GlobalAlloc(GPTR, sizeof(SOCKET_INFORMATION))) == NULL)
@@ -93,10 +94,20 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 			WSAGetLastError());
 	}
 
+	
+	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));  
+	
 	/* Name the socket (assign the local port number to receive on) */
 	SocketInfo->SenderAddr.sin_family      = AF_INET;
 	SocketInfo->SenderAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	SocketInfo->SenderAddr.sin_port        = htons(port);
+
+	//SocketInfo->Socket = gInfo->ListenSocket;//SocketInfo->Buffer = (char*) malloc(sizeof(ControlPacket));
+	SocketInfo->BytesSEND = 0;
+	SocketInfo->BytesRECV = 0;
+	SocketInfo->DataBuf.len = 1024;
+	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
+	SocketInfo->Overlapped.hEvent = WSACreateEvent();
 
 	nRet = bind(SocketInfo->Socket, (struct sockaddr*) &(SocketInfo->SenderAddr), sizeof(SocketInfo->SenderAddr));
 
@@ -110,12 +121,26 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 	stMreq.imr_multiaddr.s_addr = inet_addr(ip);
 	stMreq.imr_interface.s_addr = INADDR_ANY;
 	nRet = setsockopt(SocketInfo->Socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&stMreq, sizeof(stMreq));
-
+	int SenderAddrSize = sizeof (SocketInfo->SenderAddr);
 	if (nRet == SOCKET_ERROR) 
 	{
 		exit(0);
 		// error message
 	}
+
+	if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) &(SocketInfo->SenderAddr), &SenderAddrSize, &(SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
+			if (WSAGetLastError() != WSA_IO_PENDING){
+				printf ("WSARecvFrom() failed. Error: ", WSAGetLastError());
+				return FALSE;
+			}
+	}
+	if (WSAWaitForMultipleEvents(1, &(SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
+		printf("WSA_TIMEOUT");
+		return FALSE;
+	}
+	WSAResetEvent(SocketInfo->Overlapped.hEvent);
+
+
 	return 0;
 }
 

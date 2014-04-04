@@ -1,8 +1,5 @@
 #include "server_menu.h"
-
 #include <conio.h>
-
-
 
 #ifdef _BIG_ENDIAN
 inline DWORD le_32(DWORD v)
@@ -17,9 +14,6 @@ inline WORD le_16(WORD v)
 #define le_32(v) (v)
 #define le_16(v) (v)
 #endif
-
-
-
 
 /* handle to form */
 HWND ghwnd;
@@ -138,155 +132,93 @@ void run_server()
 
 void play(char *filename)
 {
-
-	//BASS_CHANNELINFO info;
-	//WAVEFORMATEX wf;
-	//DWORD chan,p;
-	//short buf[1000];
-
 	if (filename!=NULL)
 	{
 		chan = BASS_StreamCreateFile(FALSE,filename,0,0,BASS_SAMPLE_MONO);
 
-		//BASS_ChannelSetDSP(chan,&DSP,0,0);
 		BASS_ChannelPlay(chan, FALSE);
 
-		/*fp = fopen("log.WAV", "wb");
-
-		BASS_ChannelGetInfo(chan,&info);
-		wf.wFormatTag=1;
-		wf.nChannels=info.chans;
-		wf.wBitsPerSample=(info.flags&BASS_SAMPLE_8BITS?8:16);
-		wf.nBlockAlign=wf.nChannels*wf.wBitsPerSample/8;
-		wf.nSamplesPerSec=info.freq;
-		wf.nAvgBytesPerSec=wf.nSamplesPerSec*wf.nBlockAlign;
-
-		fwrite("RIFF\0\0\0\0WAVEfmt \20\0\0\0",20,1,fp);
-		fwrite(&wf,16,1,fp);
-		fwrite("data\0\0\0\0",8,1,fp);
-
-		while(1)
-		{
-			while (!_kbhit() && (BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING)) 
-			{
-			int c=BASS_ChannelGetData(chan,buf,1024);
-			fwrite(buf,1,c,fp);
-			}
-		}
-
-		fflush(fp);
-		p=ftell(fp);
-		fseek(fp,4,SEEK_SET);
-		putw(le_32(p-8),fp);
-		fflush(fp);
-		fseek(fp,40,SEEK_SET);
-		putw(le_32(p-44),fp);
-		fflush(fp);
-		fclose(fp);*/
-
-
-		
 		int nRet2;
 		int q;
 		DWORD Flags = 0;
-
-		if((server_SocketInfo->Overlapped.hEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
-			WSACleanup();
-			return;
-		}
-
-		BASS_ChannelGetInfo(chan,&info);
-		wf.wFormatTag=1;
-		wf.nChannels=info.chans;
-		wf.wBitsPerSample=(info.flags&BASS_SAMPLE_8BITS?8:16);
-		wf.nBlockAlign=wf.nChannels*wf.wBitsPerSample/8;
-		wf.nSamplesPerSec=info.freq;
-		wf.nAvgBytesPerSec=wf.nSamplesPerSec*wf.nBlockAlign;
-
-		memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
-
-		strcpy(server_SocketInfo->Buffer, "RIFF\0\0\0\0WAVEfmt \20\0\0\0");
-		strcat(server_SocketInfo->Buffer, (char *)&wf);
-		strcat(server_SocketInfo->Buffer, "data\0\0\0\0");
-
-		server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
-		server_SocketInfo->DataBuf.len = sizeof(server_SocketInfo->Buffer);
-
-		if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
-			if (WSAGetLastError() != WSA_IO_PENDING){
-				//error message
-				q = WSAGetLastError();
-				q = 0;
+		if (server_SocketInfo != NULL){
+			if((server_SocketInfo->Overlapped.hEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
+				WSACleanup();
+				return;
 			}
-		}
-		WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
-		WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
 
-		while(1)
-		{
-			while (!_kbhit() && (BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING)) 
-			{
-				memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
-				int c = BASS_ChannelGetData(chan,buf,1024);
-				strcpy(server_SocketInfo->Buffer, (char *)&buf);
+			BASS_ChannelGetInfo(chan,&info);
+			wf.wFormatTag=1;
+			wf.nChannels=info.chans;
+			wf.wBitsPerSample=(info.flags&BASS_SAMPLE_8BITS?8:16);
+			wf.nBlockAlign=wf.nChannels*wf.wBitsPerSample/8;
+			wf.nSamplesPerSec=info.freq;
+			wf.nAvgBytesPerSec=wf.nSamplesPerSec*wf.nBlockAlign;
 
-				server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
-				server_SocketInfo->DataBuf.len = c;
+			memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
 
-				if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
-					if (WSAGetLastError() != WSA_IO_PENDING){
-						//error message
-						q = WSAGetLastError();
-						q = 0;
-					}
+			strcpy(server_SocketInfo->Buffer, "RIFF\0\0\0\0WAVEfmt \20\0\0\0");
+			strcat(server_SocketInfo->Buffer, (char *)&wf);
+			strcat(server_SocketInfo->Buffer, "data\0\0\0\0");
+
+			server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
+			server_SocketInfo->DataBuf.len = sizeof(server_SocketInfo->Buffer);
+
+			if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
+				if (WSAGetLastError() != WSA_IO_PENDING){
+					//error message
+					q = WSAGetLastError();
+					q = 0;
 				}
-				WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
-				WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
+			}
+			WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+			WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
+
+			while(1)
+			{
+				while (!_kbhit() && (BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING)) 
+				{
+					memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
+					int c = BASS_ChannelGetData(chan,buf,1024);
+					strcpy(server_SocketInfo->Buffer, (char *)&buf);
+
+					server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
+					server_SocketInfo->DataBuf.len = c;
+
+					if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
+						if (WSAGetLastError() != WSA_IO_PENDING){
+							//error message
+							q = WSAGetLastError();
+							q = 0;
+						}
+					}
+					WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+					WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
+				}
 			}
 		}
-	}
-
-
-	if (filename!=NULL)
-	{
-		stream = BASS_StreamCreateFile(FALSE,filename,0,0,0);
-		/*{
-			strc++;
-			strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
-			strs[strc-1]=str;
-			//errMsg = "Can't open stream";
-			//MessageBox::Show(errMsg);
-		}*/
-
-
-		BASS_ChannelSetDSP(stream,&DSP,0,0);
-
-		BASS_ChannelPlay(stream, TRUE); // play the stream (continue from current position)
-			//errMsg = "Can't open stream";
-			//MessageBox::Show(errMsg);
-		//}
 	}
 }
 
 void stop(char *filename)
 {
-	if (filename!=NULL && stream != NULL)
+	if (filename!=NULL && chan != NULL)
 	{
-		BASS_ChannelStop(stream); // stop the music
+		BASS_ChannelStop(chan); // stop the music
 	}
 }
 
 void pause(char *filename){
-	if (filename!=NULL && stream != NULL)
+	if (filename!=NULL && chan != NULL)
 	{
-		BASS_ChannelPause(stream);	//pause the music
+		BASS_ChannelPause(chan);	//pause the music
 	}
 }
 
 void playPause(char *filename){
-	if (filename!=NULL && stream != NULL)
+	if (filename!=NULL && chan != NULL)
 	{
-		BASS_ChannelPlay(stream, FALSE); // play the stream (continue from current position)
+		BASS_ChannelPlay(chan, FALSE); // play the stream (continue from current position)
 	}
 }
 

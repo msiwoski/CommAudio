@@ -381,9 +381,9 @@ namespace TCPIP {
 			 {
 				 String^ errMsg		= gcnew String("error");
 				 errMsg = "Can't Create Stream File";
+				 this->pauseButton->Text = L"Pause";
 
-
-				 BASS_Stop();
+				 stop(fileName);
 			 }
 	private: System::Void pauseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
