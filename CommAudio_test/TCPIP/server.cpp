@@ -26,8 +26,12 @@ SYSTEMTIME stSysTime;
 
 BASS_CHANNELINFO info;
 WAVEFORMATEX wf;
-DWORD chan,p;
+HRECORD rec;
+DWORD chan, rchan, reclen, p;
+BOOL _recording;
+char *recbuf=NULL;
 short buf[1024];
+int input;
 
 
 /* testing the music file?!?!*/
@@ -197,7 +201,8 @@ void play(char *filename)
 				}
 			}
 		}
-	}
+	}else
+		BASS_ChannelPlay(chan, FALSE);
 }
 
 void stop(char *filename)
@@ -222,12 +227,119 @@ void playPause(char *filename){
 	}
 }
 
-void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user)
+void record()
 {
-	
-
+	if(!_recording)
+	{
+		InitDevice(-1);
+		StartRecording();
+	}else
+		StopRecording();
 }
 
+BOOL InitDevice(int device)
+{
+	BASS_RecordFree(); // free current device (and recording channel) if there is one
+	// initalize new device
+	if (!BASS_RecordInit(device)) {
+		//Error("Can't initialize recording device");
+		return FALSE;
+	}
+	{ // get list of inputs
+		int c;
+		const char *i;
+		for (c=0;i=BASS_RecordGetInputName(c);c++) {
+			if (!(BASS_RecordGetInput(c,NULL)&BASS_INPUT_OFF)) { // this one is currently "on"
+				input=c;
+			}
+		}
+	}
+	return TRUE;
+}
+
+// buffer the recorded data
+BOOL CALLBACK RecordingCallback(HRECORD handle, const void *buffer, DWORD length, void *user)
+{
+	// increase buffer size if needed
+	if ((reclen%BUFSTEP)+length>=BUFSTEP) {
+		recbuf=(char*)realloc(recbuf,((reclen+length)/BUFSTEP+1)*BUFSTEP);
+		if (!recbuf) {
+			rchan=0;
+			//Error("Out of memory!");
+			//MESS(10,WM_SETTEXT,0,"Record");
+			return FALSE; // stop recording
+		}
+	}
+	// buffer the data
+	memcpy(recbuf+reclen,buffer,length);
+	reclen+=length;
+	return TRUE; // continue recording
+}
+
+void StartRecording()
+{
+	WAVEFORMATEX *wf;
+
+	_recording = true;
+
+	if (recbuf) { // free old recording
+		BASS_StreamFree(chan);
+		chan=0;
+		free(recbuf);
+		recbuf=NULL;
+		//EnableWindow(DLGITEM(11),FALSE);
+		//EnableWindow(DLGITEM(12),FALSE);
+		// close output device before recording incase of half-duplex device
+		BASS_Free();
+	}
+	// allocate initial buffer and make space for WAVE header
+	recbuf=(char*)malloc(BUFSTEP);
+	reclen=44;
+	// fill the WAVE header
+	memcpy(recbuf,"RIFF\0\0\0\0WAVEfmt \20\0\0\0",20);
+	memcpy(recbuf+36,"data\0\0\0\0",8);
+	wf=(WAVEFORMATEX*)(recbuf+20);
+	wf->wFormatTag=1;
+	wf->nChannels=CHANS;
+	wf->wBitsPerSample=16;
+	wf->nSamplesPerSec=FREQ;
+	wf->nBlockAlign=wf->nChannels*wf->wBitsPerSample/8;
+	wf->nAvgBytesPerSec=wf->nSamplesPerSec*wf->nBlockAlign;
+	// start recording
+	rchan=BASS_RecordStart(FREQ,CHANS,0,RecordingCallback,0);
+	if (!rchan) {
+		//Error("Couldn't start recording");
+		free(recbuf);
+		recbuf=0;
+		return;
+	}
+	//MESS(10,WM_SETTEXT,0,"Stop");
+}
+
+void StopRecording()
+{
+	_recording = false;
+
+	BASS_ChannelStop(rchan);
+	rchan=0;
+	//MESS(10,WM_SETTEXT,0,"Record");
+	// complete the WAVE header
+	*(DWORD*)(recbuf+4)=reclen-8;
+	*(DWORD*)(recbuf+40)=reclen-44;
+	// enable "save" button
+	//EnableWindow(DLGITEM(12),TRUE);
+	// setup output device (using default device)
+	//if (!BASS_Init(-1,FREQ,0,win,NULL)) {
+		//Error("Can't initialize output device");
+		//return;
+	//}
+	// create a stream from the recording
+	if (chan=BASS_StreamCreateFile(TRUE,recbuf,0,reclen,0))
+		//EnableWindow(DLGITEM(11),TRUE); // enable "play" button
+		printf("sfd");
+	else 
+		BASS_Free();
+}
 
 /*
 SERVER==================================================

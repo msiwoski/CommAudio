@@ -28,7 +28,8 @@ namespace TCPIP {
 	{
 		int i;
 		HWND hwnd;
-		char *fileName;
+	private: System::Windows::Forms::Button^  button1;
+			 char *fileName;
 	public:
 		server_menu(void)
 		{
@@ -154,6 +155,7 @@ namespace TCPIP {
 			this->pauseButton = (gcnew System::Windows::Forms::Button());
 			this->FileDirButton = (gcnew System::Windows::Forms::Button());
 			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
+			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->SuspendLayout();
 			// 
 			// ListenButton
@@ -233,9 +235,9 @@ namespace TCPIP {
 			// 
 			// playButton
 			// 
-			this->playButton->Location = System::Drawing::Point(54, 97);
+			this->playButton->Location = System::Drawing::Point(116, 97);
 			this->playButton->Name = L"playButton";
-			this->playButton->Size = System::Drawing::Size(75, 23);
+			this->playButton->Size = System::Drawing::Size(58, 23);
 			this->playButton->TabIndex = 14;
 			this->playButton->Text = L"Play";
 			this->playButton->UseVisualStyleBackColor = true;
@@ -243,9 +245,9 @@ namespace TCPIP {
 			// 
 			// stopButton
 			// 
-			this->stopButton->Location = System::Drawing::Point(135, 97);
+			this->stopButton->Location = System::Drawing::Point(180, 97);
 			this->stopButton->Name = L"stopButton";
-			this->stopButton->Size = System::Drawing::Size(75, 23);
+			this->stopButton->Size = System::Drawing::Size(52, 23);
 			this->stopButton->TabIndex = 15;
 			this->stopButton->Text = L"Stop";
 			this->stopButton->UseVisualStyleBackColor = true;
@@ -253,9 +255,9 @@ namespace TCPIP {
 			// 
 			// pauseButton
 			// 
-			this->pauseButton->Location = System::Drawing::Point(216, 97);
+			this->pauseButton->Location = System::Drawing::Point(238, 97);
 			this->pauseButton->Name = L"pauseButton";
-			this->pauseButton->Size = System::Drawing::Size(75, 23);
+			this->pauseButton->Size = System::Drawing::Size(53, 23);
 			this->pauseButton->TabIndex = 16;
 			this->pauseButton->Text = L"Pause";
 			this->pauseButton->UseVisualStyleBackColor = true;
@@ -277,11 +279,22 @@ namespace TCPIP {
 			this->backgroundWorker1->WorkerSupportsCancellation = true;
 			this->backgroundWorker1->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &server_menu::backgroundWorker1_DoWork);
 			// 
+			// button1
+			// 
+			this->button1->Location = System::Drawing::Point(54, 97);
+			this->button1->Name = L"button1";
+			this->button1->Size = System::Drawing::Size(56, 23);
+			this->button1->TabIndex = 18;
+			this->button1->Text = L"Record";
+			this->button1->UseVisualStyleBackColor = true;
+			this->button1->Click += gcnew System::EventHandler(this, &server_menu::button1_Click);
+			// 
 			// server_menu
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(319, 436);
+			this->Controls->Add(this->button1);
 			this->Controls->Add(this->FileDirButton);
 			this->Controls->Add(this->pauseButton);
 			this->Controls->Add(this->stopButton);
@@ -418,7 +431,12 @@ namespace TCPIP {
 				 play(fileName);
 
 			 }
-	};
+	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) 
+			 {
+
+				 record();
+			 }
+};
 }
 
 #endif

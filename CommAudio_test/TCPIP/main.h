@@ -14,6 +14,9 @@
 #include "atlstr.h"
 
 #define DATA_BUFSIZE		1024
+#define FREQ				44100
+#define CHANS				2
+#define BUFSTEP				200000	// memory allocation unit
 #define FILENAMELENGTH 		32
 #define TIMEOUT_TIME		3000
 #define TIMEOUT_TIME_UDP	3000
@@ -44,11 +47,15 @@ typedef struct _SOCKET_INFORMATION
 */
 void run_server();
 int init_server(int port);
+void record();
 void play(char *filename);
 void stop(char *filename);
 void pause(char *filename);
 void playPause(char *filename);
-void CALLBACK DSP(HDSP handle, DWORD channel, void *buffer, DWORD length, void *user);
+BOOL InitDevice(int device);
+BOOL CALLBACK RecordingCallback(HRECORD handle, const void *buffer, DWORD length, void *user);
+void StartRecording();
+void StopRecording();
 
 
 DWORD WINAPI UDPWorkerThread(LPVOID lpParameter);
