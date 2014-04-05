@@ -43,10 +43,10 @@ SYSTEMTIME stStartTime, stEndTime;
 HSAMPLE *sams	= NULL;
 HSAMPLE sam;
 /* testing the music file?!?!*/
-HSTREAM *strs	=	NULL;
-HSTREAM str;
+//HSTREAM *strs	=	NULL;
+DWORD streamHandle;
 int strc=0;
-
+char streamDataBuffer[10000];
 
 HWND hwnd;
 #define MESS(id,m,w,l) SendDlgItemMessage(hwnd,id,m,(WPARAM)(w),(LPARAM)(l))
@@ -95,6 +95,10 @@ System::Void MyForm::MyForm_Load(System::Object^  sender, System::EventArgs^  e)
 		MessageBox::Show(errMsg);
 		return;
 	}
+
+
+	streamHandle = BASS_StreamCreate(44100, 2, 0, STREAMPROC_PUSH, 0);
+
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: clientButton_Click
@@ -175,11 +179,10 @@ System::Void MyForm::openButton_Click(System::Object^  sender, System::EventArgs
 	if(openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK ){
 		fileInfo->fileName = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(openFileDialog1->FileName + "\0");
 		//fileInfo->pfile = fopen(fileInfo->fileName, "r");
-		if (str=BASS_StreamCreateFile(FALSE,fileInfo->fileName,0,0,0)) {
-			strc++;
-			strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
-			strs[strc-1]=str;
-			STLM(LB_ADDSTRING,0,strrchr(fileInfo->fileName,'\\')+1);
+		if (streamHandle = BASS_StreamCreateFile(FALSE,fileInfo->fileName,0,0,0)) {
+			//strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
+			//strs[strc-1]=str;
+			//STLM(LB_ADDSTRING,0,strrchr(fileInfo->fileName,'\\')+1);
 		} else{
 			errMsg = "Can't open stream";
 			MessageBox::Show(errMsg);
@@ -244,8 +247,7 @@ System::Void MyForm::receiveButton_Click(System::Object^  sender, System::EventA
 	SOCKET_INFORMATION* SI	= (SOCKET_INFORMATION*) malloc(sizeof(SOCKET_INFORMATION)); 
 	portNum					= (int) portNumberChooser->Value;
 	SI->pktsRcvd			= 0;
-	gInfo->protocolType		= (int) protocolTypeChooser->SelectedIndex;
-
+	
 	memset((char *)&(gInfo->InternetAddr), 0, sizeof(SOCKADDR_IN));
 	memset((char *)&(gInfo->SenderAddr), 0, sizeof(SOCKADDR_IN));
 	gInfo->InternetAddr.sin_family		= AF_INET;
@@ -313,17 +315,20 @@ DWORD WINAPI UDPWorkerThread(LPVOID lpParameter){
 		return FALSE;
 	}
 
-	SocketInfo->Socket = gInfo->ListenSocket;
+	SocketInfo->Socket		= gInfo->ListenSocket;
 	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));  
-	SocketInfo->Buffer = (char*) malloc(sizeof(ControlPacket));
-	SocketInfo->BytesSEND = 0;
-	SocketInfo->BytesRECV = 0;
-	SocketInfo->DataBuf.len = sizeof(ControlPacket);
+	//SocketInfo->Buffer = (char*) malloc(sizeof(ControlPacket));
+	SocketInfo->Buffer = (char*) malloc(sizeof(2048));
+	SocketInfo->BytesSEND	= 0;
+	SocketInfo->BytesRECV	= 0;
+	SocketInfo->DataBuf.len = sizeof(char) * 10000;
 	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 	SocketInfo->Overlapped.hEvent = WSACreateEvent();
 
+	//if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR*) &(gInfo->SenderAddr), &SenderAddrSize,
+	//	&(SocketInfo->Overlapped), UDPCtrlWorkerRoutine) == SOCKET_ERROR){
 	if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR*) &(gInfo->SenderAddr), &SenderAddrSize,
-		&(SocketInfo->Overlapped), UDPCtrlWorkerRoutine) == SOCKET_ERROR){
+		&(SocketInfo->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
 			if (WSAGetLastError() != WSA_IO_PENDING){
 				errMsg = "WSARecvFrom() failed. Error: " + WSAGetLastError();
 				MessageBox::Show(errMsg);
@@ -364,7 +369,7 @@ DWORD WINAPI UDPWorkerThread(LPVOID lpParameter){
 -- would receive the actual information the client would like to send.
 ------------------------------------------------------------------------------------------------------------------*/
 VOID CALLBACK UDPCtrlWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags){
-	DWORD RecvBytes = 0, Flags = 0;
+	/*DWORD RecvBytes = 0, Flags = 0;
 	String^ errMsg = gcnew String("error");
 	LPSOCKET_INFORMATION SI = (LPSOCKET_INFORMATION) Overlapped;
 	struct sockaddr_in SenderAddr;
@@ -385,7 +390,7 @@ VOID CALLBACK UDPCtrlWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVE
 		MessageBox::Show("WSA_TIMEOUT");
 		return;
 	}
-	WSAResetEvent(SI->Overlapped.hEvent);
+	WSAResetEvent(SI->Overlapped.hEvent);*/
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -418,28 +423,39 @@ VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAP
 	struct sockaddr_in SenderAddr;
 	int SenderAddrSize = sizeof (SenderAddr);
 	
-
 	if(BytesTransferred == 0 || Error != 0){
 		MessageBox::Show("Connection has been closed.");
 		return;
 	}
 
+	if (BytesTransferred > 0 ){
+		BASS_StreamPutData(streamHandle, streamDataBuffer, RecvBytes);
+	}
 	SI->pktsRcvd++;
 	
-	if (SI->pktsRcvd == SI->numSending){
+	if(SI->pktsRcvd >40){
+		BASS_ChannelPlay(streamHandle, FALSE);
+	}
+
+	/*if (SI->pktsRcvd == SI->numSending){
 		GetSystemTime(&stEndTime);
 		errMsg = "Round-trip delay = " +  delay(stStartTime, stEndTime)  + "ms.";
 		MessageBox::Show(errMsg);
 		errMsg = "Total Number Received: " + SI->pktsRcvd + "Total Number Needed: " + SI->numSending;
 		MessageBox::Show(errMsg);
 		return;
-	} else if (WSARecvFrom(SI->Socket, &(SI->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) &SenderAddr, &SenderAddrSize, &(SI->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
+	} else 
+		*/
+	if (WSARecvFrom(SI->Socket, &(SI->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) 
+		&SenderAddr, &SenderAddrSize, &(SI->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
 		if (WSAGetLastError() != WSA_IO_PENDING ){
 			errMsg = "WSARecvFrom() failed with error \n" + WSAGetLastError();
 			MessageBox::Show(errMsg);
 			return;
 		}
 	}
+	
+
 	if (WSAWaitForMultipleEvents(1, &(SI->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
 		errMsg = "Total Number Received: " + SI->pktsRcvd + "Total Number Needed: " + SI->numSending;
 		MessageBox::Show(errMsg);
@@ -477,22 +493,25 @@ System::Void MyForm::sendButton_Click(System::Object^  sender, System::EventArgs
 	char* host					= "host";
 	DWORD Flags					= 0;
 	GoodInfo* gInfo				= (GoodInfo*) malloc(sizeof(GoodInfo));
-	ControlPacket* ctrlPkt		= (ControlPacket*) malloc(sizeof(ControlPacket));
 	portNum						= (int) portNumberChooser->Value; 
-	ctrlPkt->ctrlPktSize		= (int) pktSizeChoice->Value;
-	ctrlPkt->numTimesSending	= (int) sendTimesChoice->Value;
-	gInfo->protocolType			= (int) protocolTypeChooser->SelectedIndex;
-	gInfo->ctrlPktSizeGI		= ctrlPkt->ctrlPktSize;
-	gInfo->numTimesSendingGI	= ctrlPkt->numTimesSending;
-	DataBuf.buf					= (char*)ctrlPkt;
-	DataBuf.len					= sizeof(ControlPacket);
-	gInfo->fileData				= (char*) malloc(ctrlPkt->ctrlPktSize);
-	for(int i = 0; i < FILENAMELENGTH; i++){
+	//ControlPacket* ctrlPkt		= (ControlPacket*) malloc(sizeof(ControlPacket));
+	//ctrlPkt->ctrlPktSize		= (int) pktSizeChoice->Value;
+	//ctrlPkt->numTimesSending	= (int) sendTimesChoice->Value;
+	//gInfo->protocolType			= (int) protocolTypeChooser->SelectedIndex;
+	//ctrlPkt->ctrlPktSize		= 1024;
+	//gInfo->ctrlPktSizeGI		= ctrlPkt->ctrlPktSize;
+	//gInfo->numTimesSendingGI	= 1;
+	//DataBuf.buf					= (char*)ctrlPkt;
+	//DataBuf.len					= sizeof(ControlPacket);
+	//gInfo->fileData				= (char*) malloc(ctrlPkt->ctrlPktSize);
+	/*for(int i = 0; i < FILENAMELENGTH; i++){
 		ctrlPkt->fileName[i] = 0;
 	}
-	strcpy(ctrlPkt->fileName,"test.txt");
+	if (fileInfo->fileName != NULL){
+		strcpy(ctrlPkt->fileName, fileInfo->fileName);
+	}*/
 
-	if(openFlag == 1){
+	/*if(openFlag == 1){
 		for(int i = 0; i < gInfo->ctrlPktSizeGI; i++){
 			fscanf(fileInfo->pfile, "%c", &(gInfo->fileData[i]));
 		}
@@ -500,12 +519,10 @@ System::Void MyForm::sendButton_Click(System::Object^  sender, System::EventArgs
 		for(int i = 0; i < gInfo->ctrlPktSizeGI; i++){
 			gInfo->fileData[i] = 'a';
 		}
-	}
+	}*/
 	
 	if ((ipAddress = (String^) ipAddressTextBox->Text) != ""){
 		result = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(ipAddress);
-	} else if((nameDest = (String^) nameTextBox->Text) != ""){
-		host = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(nameDest);
 	} else {
 		errMsg = "No IP or Host";
 		MessageBox::Show(errMsg);
@@ -517,6 +534,7 @@ System::Void MyForm::sendButton_Click(System::Object^  sender, System::EventArgs
 	gInfo->SenderAddr.sin_addr.s_addr  = htonl(INADDR_ANY);
 	gInfo->InternetAddr.sin_port = htons(portNum);
 	gInfo->InternetAddr.sin_family = AF_INET;
+
 	if ((gInfo->InternetAddr.sin_addr.s_addr = inet_addr(result)) == INADDR_NONE){
 		errMsg =  "Unable to get IP Address. Error: " + GetLastError();
 		MessageBox::Show(errMsg);
@@ -536,11 +554,11 @@ System::Void MyForm::sendButton_Click(System::Object^  sender, System::EventArgs
 		WSACleanup();
 		return;
 	}
-	if(sendto(gInfo->SenderSocket, DataBuf.buf, DataBuf.len, Flags, (SOCKADDR*) &(gInfo->InternetAddr), sizeof(gInfo->InternetAddr)) == SOCKET_ERROR){
+	/*if(sendto(gInfo->SenderSocket, DataBuf.buf, DataBuf.len, Flags, (SOCKADDR*) &(gInfo->InternetAddr), sizeof(gInfo->InternetAddr)) == SOCKET_ERROR){
 		errMsg = "Sending Control Packet failed. Error: " + GetLastError();
 		MessageBox::Show(errMsg);
 		return ;
-	}
+	}*/
 	if ((gInfo->ThreadHandle = CreateThread(NULL, 0, UDPSenderThread, (LPVOID)gInfo, 0, &(gInfo->ThreadID))) == NULL){
 		errMsg = "CreateThread failed. Error: " + GetLastError();
 		MessageBox::Show(errMsg);
@@ -574,11 +592,21 @@ DWORD WINAPI UDPSenderThread(LPVOID lpParameter){
 	GoodInfo* gInfo		= (GoodInfo*) lpParameter;
 	DWORD Flags			= 0;
 	WSABUF DataBuf;
-	DataBuf.buf = gInfo->fileData;
-	DataBuf.len = gInfo->ctrlPktSizeGI;
+	DWORD sendBytes = 0;
+	DWORD bytesSent = 0;
+	//DataBuf.buf = gInfo->fileData;
+	//DataBuf.len = gInfo->ctrlPktSizeGI;
 
-	for (int i = 0; i < gInfo->numTimesSendingGI; i++){
-		if (WSASendTo(gInfo->SenderSocket, &DataBuf, 1, NULL, Flags, (SOCKADDR*) &(gInfo->InternetAddr), sizeof(SOCKADDR) , &(gInfo->SendOverlapped), NULL) == SOCKET_ERROR){
+
+	char streamDataBuffer[2048];
+	HSTREAM streamBuffer = BASS_StreamCreateFile(FALSE, fileInfo->fileName, 0, 0, BASS_STREAM_DECODE);
+
+	while(BASS_ChannelIsActive(streamBuffer) == BASS_ACTIVE_PLAYING ) {
+		DWORD readLength =	BASS_ChannelGetData(streamBuffer, streamDataBuffer, 2048);
+		DataBuf.buf = (CHAR*)streamDataBuffer;
+		DataBuf.len = readLength;
+
+		if (WSASendTo(gInfo->SenderSocket, &DataBuf, 1, &sendBytes, Flags, (SOCKADDR*) &(gInfo->InternetAddr), sizeof(SOCKADDR), &(gInfo->SendOverlapped), NULL) == SOCKET_ERROR){
 			if (WSAGetLastError() != WSA_IO_PENDING){
 				errMsg = "WSASendTo() failed with error \n" + WSAGetLastError();
 				MessageBox::Show(errMsg);
@@ -586,9 +614,11 @@ DWORD WINAPI UDPSenderThread(LPVOID lpParameter){
 			}
 		}
 		WSAWaitForMultipleEvents(1, &(gInfo->SendOverlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+		WSAGetOverlappedResult(gInfo->SenderSocket, &(gInfo->SendOverlapped), &bytesSent, FALSE, &Flags);
 		WSAResetEvent(gInfo->SendOverlapped.hEvent);
-	}
 
+		bytesSent += sendBytes;
+	}
 	return 1;
 }
 
@@ -621,51 +651,25 @@ long delay (SYSTEMTIME t1, SYSTEMTIME t2)
 }
 
 System::Void MyForm::openSong_Click(System::Object^  sender, System::EventArgs^  e){
-	String^ errMsg		= gcnew String("error");
+	/*String^ errMsg		= gcnew String("error");
 	int strc = 0;
-	//char file[MAX_PATH]="C:/Users/Maciu/Desktop/Downloaded stuff/Music/Long May You Run - Stills Young Band.mp3";
-	HSTREAM str;
-	if (str=BASS_StreamCreateFile(FALSE,fileInfo->fileName,0,0,0)) {
+	//HSTREAM str;
+	if (streamHandle=BASS_StreamCreateFile(FALSE,fileInfo->fileName,0,0,0)) {
 		strc++;
-		strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
-		strs[strc-1]=str;
+		//strs=(HSTREAM*)realloc((void*)strs,strc*sizeof(*strs));
+		//strs[strc-1]=str;
 		STLM(LB_ADDSTRING,0,strrchr(fileInfo->fileName,'\\')+1);
 	} else {
 		errMsg = "Can't open stream";
 		MessageBox::Show(errMsg);
-	}
+	}*/
 }
 
 System::Void MyForm::playButton_Click(System::Object^  sender, System::EventArgs^  e){
-	
-
-	/*
-	int samc = 0;
-	if (sam=BASS_SampleLoad(FALSE,file,0,0,3,BASS_SAMPLE_OVER_POS)) {
-		samc++;
-		sams=(HSAMPLE*)realloc((void*)sams,samc*sizeof(*sams));
-		sams[samc-1]=sam;
-		SLM(LB_ADDSTRING,0,strrchr(file,'\\')+1);
-	}
-	int s = GETSAM();
-	if (s!=LB_ERR) {
-		HCHANNEL ch=BASS_SampleGetChannel(sams[s],FALSE);
-		if (!BASS_ChannelPlay(ch,FALSE)){
-			errMsg = "Can't Create Stream File";
-			MessageBox::Show(errMsg);
-			return;
-		}
-	}
-	*/
-
-	
-	int s=GETSTR();
-	if (s!=LB_ERR){
-		if (!BASS_ChannelPlay(strs[s],FALSE)){ // play the stream (continue from current position)
-			errMsg = "Can't open stream";
-			MessageBox::Show(errMsg);
-		}		
-	}
+	if (!BASS_ChannelPlay(streamHandle,FALSE)){ // play the stream (continue from current position)
+		errMsg = "Can't play song!";
+		MessageBox::Show(errMsg);
+	}		
 
 }
 
@@ -673,17 +677,12 @@ System::Void MyForm::stopButton_Click(System::Object^  sender, System::EventArgs
 	String^ errMsg		= gcnew String("error");
 	errMsg = "Can't Create Stream File";
 	
-	int s=GETMOD();
-	if (s!=LB_ERR) {
-		BASS_ChannelStop(strs[s]); // stop the music
-	}
+	BASS_ChannelStop(streamHandle); // stop the music
+	
 }
 
 System::Void MyForm::pauseButton_Click(System::Object^  sender, System::EventArgs^  e){
 	String^ errMsg		= gcnew String("error");
 	errMsg	= "Can't Create Stream File";
-	int s	= GETMOD();
-	if (s != LB_ERR) {
-		BASS_ChannelPause(strs[s]);	//pause the music
-	}
+	BASS_ChannelPause(streamHandle);	//pause the music
 }

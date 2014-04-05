@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{46F7EFB8-BAE1-40EE-9FF3-32189345CD4F}</ProjectGuid>
     <RootNamespace>WinAsgn2</RootNamespace>
+    <ProjectName>CommAudio</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

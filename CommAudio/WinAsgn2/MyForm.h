@@ -92,25 +92,25 @@ private:
 	void InitializeComponent(void)
 	{
 		this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+		this->ipAddressTextBox = (gcnew System::Windows::Forms::TextBox());
 		this->portNumberChooser = (gcnew System::Windows::Forms::NumericUpDown());
+		this->label5 = (gcnew System::Windows::Forms::Label());
 		this->serverButton = (gcnew System::Windows::Forms::RadioButton());
 		this->clientButton = (gcnew System::Windows::Forms::RadioButton());
 		this->Port = (gcnew System::Windows::Forms::Label());
 		this->clientGroupBox = (gcnew System::Windows::Forms::GroupBox());
-		this->ipAddressTextBox = (gcnew System::Windows::Forms::TextBox());
-		this->label5 = (gcnew System::Windows::Forms::Label());
 		this->sendButton = (gcnew System::Windows::Forms::Button());
+		this->pauseButton = (gcnew System::Windows::Forms::Button());
 		this->openButton = (gcnew System::Windows::Forms::Button());
+		this->stopButton = (gcnew System::Windows::Forms::Button());
 		this->label2 = (gcnew System::Windows::Forms::Label());
+		this->playButton = (gcnew System::Windows::Forms::Button());
 		this->serverGroupBox = (gcnew System::Windows::Forms::GroupBox());
 		this->label7 = (gcnew System::Windows::Forms::Label());
 		this->saveButton = (gcnew System::Windows::Forms::Button());
 		this->receiveButton = (gcnew System::Windows::Forms::Button());
 		this->openFileDialog1 = (gcnew System::Windows::Forms::OpenFileDialog());
 		this->saveFileDialog1 = (gcnew System::Windows::Forms::SaveFileDialog());
-		this->playButton = (gcnew System::Windows::Forms::Button());
-		this->stopButton = (gcnew System::Windows::Forms::Button());
-		this->pauseButton = (gcnew System::Windows::Forms::Button());
 		this->groupBox1->SuspendLayout();
 		(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->portNumberChooser))->BeginInit();
 		this->clientGroupBox->SuspendLayout();
@@ -132,6 +132,14 @@ private:
 		this->groupBox1->TabStop = false;
 		this->groupBox1->Text = L"Purpose";
 		// 
+		// ipAddressTextBox
+		// 
+		this->ipAddressTextBox->Location = System::Drawing::Point(449, 27);
+		this->ipAddressTextBox->Name = L"ipAddressTextBox";
+		this->ipAddressTextBox->Size = System::Drawing::Size(116, 20);
+		this->ipAddressTextBox->TabIndex = 8;
+		this->ipAddressTextBox->Text = L"127.0.0.1";
+		// 
 		// portNumberChooser
 		// 
 		this->portNumberChooser->Location = System::Drawing::Point(246, 27);
@@ -140,17 +148,27 @@ private:
 		this->portNumberChooser->Name = L"portNumberChooser";
 		this->portNumberChooser->Size = System::Drawing::Size(120, 20);
 		this->portNumberChooser->TabIndex = 4;
-		this->portNumberChooser->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) {5150, 0, 0, 0});
+		this->portNumberChooser->UseWaitCursor = true;
+		this->portNumberChooser->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) {5151, 0, 0, 0});
+		// 
+		// label5
+		// 
+		this->label5->AutoSize = true;
+		this->label5->Location = System::Drawing::Point(382, 29);
+		this->label5->Name = L"label5";
+		this->label5->Size = System::Drawing::Size(61, 13);
+		this->label5->TabIndex = 7;
+		this->label5->Text = L"IP Address:";
 		// 
 		// serverButton
 		// 
 		this->serverButton->AutoSize = true;
 		this->serverButton->Location = System::Drawing::Point(92, 27);
 		this->serverButton->Name = L"serverButton";
-		this->serverButton->Size = System::Drawing::Size(56, 17);
+		this->serverButton->Size = System::Drawing::Size(51, 17);
 		this->serverButton->TabIndex = 1;
 		this->serverButton->TabStop = true;
-		this->serverButton->Text = L"Server";
+		this->serverButton->Text = L"Client";
 		this->serverButton->UseVisualStyleBackColor = true;
 		this->serverButton->Click += gcnew System::EventHandler(this, &MyForm::serverButton_Click);
 		// 
@@ -159,10 +177,10 @@ private:
 		this->clientButton->AutoSize = true;
 		this->clientButton->Location = System::Drawing::Point(16, 27);
 		this->clientButton->Name = L"clientButton";
-		this->clientButton->Size = System::Drawing::Size(51, 17);
+		this->clientButton->Size = System::Drawing::Size(56, 17);
 		this->clientButton->TabIndex = 0;
 		this->clientButton->TabStop = true;
-		this->clientButton->Text = L"Client";
+		this->clientButton->Text = L"Server";
 		this->clientButton->UseVisualStyleBackColor = true;
 		this->clientButton->Click += gcnew System::EventHandler(this, &MyForm::clientButton_Click);
 		// 
@@ -178,34 +196,14 @@ private:
 		// clientGroupBox
 		// 
 		this->clientGroupBox->Controls->Add(this->sendButton);
-		this->clientGroupBox->Controls->Add(this->pauseButton);
 		this->clientGroupBox->Controls->Add(this->openButton);
-		this->clientGroupBox->Controls->Add(this->stopButton);
 		this->clientGroupBox->Controls->Add(this->label2);
-		this->clientGroupBox->Controls->Add(this->playButton);
 		this->clientGroupBox->Location = System::Drawing::Point(23, 97);
 		this->clientGroupBox->Name = L"clientGroupBox";
 		this->clientGroupBox->Size = System::Drawing::Size(267, 263);
 		this->clientGroupBox->TabIndex = 1;
 		this->clientGroupBox->TabStop = false;
-		this->clientGroupBox->Text = L"Client";
-		// 
-		// ipAddressTextBox
-		// 
-		this->ipAddressTextBox->Location = System::Drawing::Point(449, 27);
-		this->ipAddressTextBox->Name = L"ipAddressTextBox";
-		this->ipAddressTextBox->Size = System::Drawing::Size(116, 20);
-		this->ipAddressTextBox->TabIndex = 8;
-		this->ipAddressTextBox->Text = L"127.0.0.1";
-		// 
-		// label5
-		// 
-		this->label5->AutoSize = true;
-		this->label5->Location = System::Drawing::Point(382, 29);
-		this->label5->Name = L"label5";
-		this->label5->Size = System::Drawing::Size(61, 13);
-		this->label5->TabIndex = 7;
-		this->label5->Text = L"IP Address:";
+		this->clientGroupBox->Text = L"Server";
 		// 
 		// sendButton
 		// 
@@ -217,6 +215,16 @@ private:
 		this->sendButton->UseVisualStyleBackColor = true;
 		this->sendButton->Click += gcnew System::EventHandler(this, &MyForm::sendButton_Click);
 		// 
+		// pauseButton
+		// 
+		this->pauseButton->Location = System::Drawing::Point(188, 72);
+		this->pauseButton->Name = L"pauseButton";
+		this->pauseButton->Size = System::Drawing::Size(75, 23);
+		this->pauseButton->TabIndex = 5;
+		this->pauseButton->Text = L"Pause";
+		this->pauseButton->UseVisualStyleBackColor = true;
+		this->pauseButton->Click += gcnew System::EventHandler(this, &MyForm::pauseButton_Click);
+		// 
 		// openButton
 		// 
 		this->openButton->Location = System::Drawing::Point(73, 33);
@@ -227,6 +235,16 @@ private:
 		this->openButton->UseVisualStyleBackColor = true;
 		this->openButton->Click += gcnew System::EventHandler(this, &MyForm::openButton_Click);
 		// 
+		// stopButton
+		// 
+		this->stopButton->Location = System::Drawing::Point(107, 72);
+		this->stopButton->Name = L"stopButton";
+		this->stopButton->Size = System::Drawing::Size(75, 23);
+		this->stopButton->TabIndex = 4;
+		this->stopButton->Text = L"Stop";
+		this->stopButton->UseVisualStyleBackColor = true;
+		this->stopButton->Click += gcnew System::EventHandler(this, &MyForm::stopButton_Click);
+		// 
 		// label2
 		// 
 		this->label2->AutoSize = true;
@@ -236,17 +254,30 @@ private:
 		this->label2->TabIndex = 0;
 		this->label2->Text = L"Open File";
 		// 
+		// playButton
+		// 
+		this->playButton->Location = System::Drawing::Point(26, 72);
+		this->playButton->Name = L"playButton";
+		this->playButton->Size = System::Drawing::Size(75, 23);
+		this->playButton->TabIndex = 3;
+		this->playButton->Text = L"Play";
+		this->playButton->UseVisualStyleBackColor = true;
+		this->playButton->Click += gcnew System::EventHandler(this, &MyForm::playButton_Click);
+		// 
 		// serverGroupBox
 		// 
 		this->serverGroupBox->Controls->Add(this->label7);
+		this->serverGroupBox->Controls->Add(this->pauseButton);
 		this->serverGroupBox->Controls->Add(this->saveButton);
 		this->serverGroupBox->Controls->Add(this->receiveButton);
+		this->serverGroupBox->Controls->Add(this->stopButton);
+		this->serverGroupBox->Controls->Add(this->playButton);
 		this->serverGroupBox->Location = System::Drawing::Point(308, 97);
 		this->serverGroupBox->Name = L"serverGroupBox";
 		this->serverGroupBox->Size = System::Drawing::Size(287, 264);
 		this->serverGroupBox->TabIndex = 2;
 		this->serverGroupBox->TabStop = false;
-		this->serverGroupBox->Text = L"Server";
+		this->serverGroupBox->Text = L"Client";
 		// 
 		// label7
 		// 
@@ -282,36 +313,6 @@ private:
 		// 
 		this->openFileDialog1->FileName = L"openFileDialog1";
 		// 
-		// playButton
-		// 
-		this->playButton->Location = System::Drawing::Point(12, 76);
-		this->playButton->Name = L"playButton";
-		this->playButton->Size = System::Drawing::Size(75, 23);
-		this->playButton->TabIndex = 3;
-		this->playButton->Text = L"Play";
-		this->playButton->UseVisualStyleBackColor = true;
-		this->playButton->Click += gcnew System::EventHandler(this, &MyForm::playButton_Click);
-		// 
-		// stopButton
-		// 
-		this->stopButton->Location = System::Drawing::Point(93, 76);
-		this->stopButton->Name = L"stopButton";
-		this->stopButton->Size = System::Drawing::Size(75, 23);
-		this->stopButton->TabIndex = 4;
-		this->stopButton->Text = L"Stop";
-		this->stopButton->UseVisualStyleBackColor = true;
-		this->stopButton->Click += gcnew System::EventHandler(this, &MyForm::stopButton_Click);
-		// 
-		// pauseButton
-		// 
-		this->pauseButton->Location = System::Drawing::Point(174, 76);
-		this->pauseButton->Name = L"pauseButton";
-		this->pauseButton->Size = System::Drawing::Size(75, 23);
-		this->pauseButton->TabIndex = 5;
-		this->pauseButton->Text = L"Pause";
-		this->pauseButton->UseVisualStyleBackColor = true;
-		this->pauseButton->Click += gcnew System::EventHandler(this, &MyForm::pauseButton_Click);
-		// 
 		// MyForm
 		// 
 		this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
@@ -321,7 +322,7 @@ private:
 		this->Controls->Add(this->clientGroupBox);
 		this->Controls->Add(this->groupBox1);
 		this->Name = L"MyForm";
-		this->Text = L"Client/Server";
+		this->Text = L"Comm Audio";
 		this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 		this->groupBox1->ResumeLayout(false);
 		this->groupBox1->PerformLayout();
