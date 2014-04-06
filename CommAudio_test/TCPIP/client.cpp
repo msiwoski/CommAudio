@@ -3,6 +3,7 @@
 LPSOCKET_INFORMATION SocketInfo;
 DWORD inStream;
 char streamDataBuffer[1000000];
+char dataBuffer[1024];
 
 VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags)
 {
@@ -19,14 +20,14 @@ VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAP
 		return;
 	}
 
-	if (BytesTransferred > 0 ){
-		BASS_StreamPutData(inStream, streamDataBuffer, RecvBytes);
+	/*if (BytesTransferred > 0 ){
+		BASS_StreamPutData(inStream, dataBuffer, RecvBytes);
 	}
 	SI->pktsRcvd++;
 	
-	if(SI->pktsRcvd >40){
+	if(SI->pktsRcvd > 40){
 		BASS_ChannelPlay(inStream, FALSE);
-	}
+	}*/
 
 	if (WSARecvFrom(SI->Socket, &(SI->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) &SenderAddr, &SenderAddrSize, &(SI->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
 		if (WSAGetLastError() != WSA_IO_PENDING ){
@@ -34,6 +35,7 @@ VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAP
 			return;
 		}
 	}
+
 	if (WSAWaitForMultipleEvents(1, &(SI->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
 		//MessageBox::Show(errMsg);
 		return;
@@ -51,8 +53,8 @@ void run_client(System::Windows::Forms::ListBox ^lb)
 	//SocketInfo->Buffer = (char*) malloc(sizeof(ControlPacket));
 	SocketInfo->BytesSEND = 0;
 	SocketInfo->BytesRECV = 0;
-	SocketInfo->DataBuf.len = sizeof(char) * 1024;
-	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
+	SocketInfo->DataBuf.len = 1024;
+	SocketInfo->DataBuf.buf = (CHAR*)dataBuffer;
 	SocketInfo->Overlapped.hEvent = WSACreateEvent();
 
 	while (1) {
@@ -71,6 +73,16 @@ void run_client(System::Windows::Forms::ListBox ^lb)
 			exit(1);
 			// error message
 		}
+
+		if (RecvBytes > 0 ){
+		BASS_StreamPutData(inStream, dataBuffer, RecvBytes);
+		}
+		SocketInfo->pktsRcvd++;
+	
+		if(SocketInfo->pktsRcvd > 256){
+			BASS_ChannelPlay(inStream, FALSE);
+		}
+
 		WSAResetEvent(SocketInfo->Overlapped.hEvent);
 	}
 }
@@ -129,6 +141,8 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 	{
 		// error message
 	}
+
+	inStream = BASS_StreamCreate(44100, 2, 0, STREAMPROC_PUSH, 0);
 	return 0;
 
 }

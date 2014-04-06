@@ -20,10 +20,16 @@ namespace TCPIP
 	/// </summary>
 	public ref class client_menu : public System::Windows::Forms::Form
 	{
+		HWND hwnd;
 	public:
 		client_menu(void)
 		{
 			InitializeComponent();
+			if (!BASS_Init(-1,44100, 0,hwnd,NULL))
+			{
+				MessageBox::Show("Can't initialize device");
+				return;
+			}
 		}
 
 	protected:
