@@ -1,6 +1,8 @@
 #include "client_menu.h"
 
 LPSOCKET_INFORMATION SocketInfo;
+DWORD inStream;
+char streamDataBuffer[1000000];
 
 VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags)
 {
@@ -8,11 +10,22 @@ VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAP
 	LPSOCKET_INFORMATION SI = (LPSOCKET_INFORMATION) Overlapped;
 	struct sockaddr_in SenderAddr;
 	int SenderAddrSize = sizeof (SenderAddr);
+	int q;
 
 
 	if(BytesTransferred == 0 || Error != 0){
 		//MessageBox::Show("Connection has been closed.");
+		q++;
 		return;
+	}
+
+	if (BytesTransferred > 0 ){
+		BASS_StreamPutData(inStream, streamDataBuffer, RecvBytes);
+	}
+	SI->pktsRcvd++;
+	
+	if(SI->pktsRcvd >40){
+		BASS_ChannelPlay(inStream, FALSE);
 	}
 
 	if (WSARecvFrom(SI->Socket, &(SI->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) &SenderAddr, &SenderAddrSize, &(SI->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
@@ -29,7 +42,8 @@ VOID CALLBACK UDPWorkerRoutine(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAP
 }
 
 void run_client(System::Windows::Forms::ListBox ^lb)
-{
+{ 
+	int q;
 	DWORD Flags = 0, RecvBytes = 0;
 	int SenderAddrSize = sizeof (SocketInfo->SenderAddr);
 
@@ -37,7 +51,7 @@ void run_client(System::Windows::Forms::ListBox ^lb)
 	//SocketInfo->Buffer = (char*) malloc(sizeof(ControlPacket));
 	SocketInfo->BytesSEND = 0;
 	SocketInfo->BytesRECV = 0;
-	SocketInfo->DataBuf.len = sizeof(SocketInfo->Buffer);
+	SocketInfo->DataBuf.len = sizeof(char) * 1024;
 	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 	SocketInfo->Overlapped.hEvent = WSACreateEvent();
 
@@ -47,10 +61,11 @@ void run_client(System::Windows::Forms::ListBox ^lb)
 
 		if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR*) &(SocketInfo->SenderAddr), &SenderAddrSize,
 			&(SocketInfo->Overlapped), UDPWorkerRoutine) == SOCKET_ERROR){
-				if (WSAGetLastError() != WSA_IO_PENDING){
+				if ((q = WSAGetLastError()) != WSA_IO_PENDING){
 					exit(1);
 					// error message
 				}
+				q++;
 		}
 		if (WSAWaitForMultipleEvents(1, &(SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
 			exit(1);
@@ -66,8 +81,7 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 	BOOL  fFlag;
 	struct ip_mreq stMreq;
 	WSADATA stWSAData;
-	DWORD RecvBytes				= 0;
-	DWORD Flags					= 0;
+
 	WSAStartup(0x0202, &stWSAData);
 
 	if ((SocketInfo = (LPSOCKET_INFORMATION) GlobalAlloc(GPTR, sizeof(SOCKET_INFORMATION))) == NULL)
@@ -94,26 +108,15 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 			WSAGetLastError());
 	}
 
-	
-	ZeroMemory(&(SocketInfo->Overlapped), sizeof(WSAOVERLAPPED));  
-	
 	/* Name the socket (assign the local port number to receive on) */
 	SocketInfo->SenderAddr.sin_family      = AF_INET;
 	SocketInfo->SenderAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	SocketInfo->SenderAddr.sin_port        = htons(port);
 
-	//SocketInfo->Socket = gInfo->ListenSocket;//SocketInfo->Buffer = (char*) malloc(sizeof(ControlPacket));
-	SocketInfo->BytesSEND = 0;
-	SocketInfo->BytesRECV = 0;
-	SocketInfo->DataBuf.len = 1024;
-	SocketInfo->DataBuf.buf = SocketInfo->Buffer;
-	SocketInfo->Overlapped.hEvent = WSACreateEvent();
-
 	nRet = bind(SocketInfo->Socket, (struct sockaddr*) &(SocketInfo->SenderAddr), sizeof(SocketInfo->SenderAddr));
 
 	if (nRet == SOCKET_ERROR)
 	{
-		exit(0);
 		// error message
 	}
 
@@ -121,27 +124,13 @@ int multicast_connect(System::Windows::Forms::ListBox ^lb, char* ip, int port)
 	stMreq.imr_multiaddr.s_addr = inet_addr(ip);
 	stMreq.imr_interface.s_addr = INADDR_ANY;
 	nRet = setsockopt(SocketInfo->Socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&stMreq, sizeof(stMreq));
-	int SenderAddrSize = sizeof (SocketInfo->SenderAddr);
+
 	if (nRet == SOCKET_ERROR) 
 	{
-		exit(0);
 		// error message
 	}
-
-	if (WSARecvFrom(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, (SOCKADDR *) &(SocketInfo->SenderAddr), &SenderAddrSize, &(SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
-			if (WSAGetLastError() != WSA_IO_PENDING){
-				printf ("WSARecvFrom() failed. Error: ", WSAGetLastError());
-				return FALSE;
-			}
-	}
-	if (WSAWaitForMultipleEvents(1, &(SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE) == WSA_WAIT_TIMEOUT){
-		printf("WSA_TIMEOUT");
-		return FALSE;
-	}
-	WSAResetEvent(SocketInfo->Overlapped.hEvent);
-
-
 	return 0;
+
 }
 
 /*

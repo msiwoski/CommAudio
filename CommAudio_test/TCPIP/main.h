@@ -34,6 +34,7 @@ typedef struct _SOCKET_INFORMATION
 	DWORD BytesRECV;
 	SOCKADDR_IN SenderAddr;
 	SOCKADDR_IN DestAddr;
+	int pktsRcvd;
 } SOCKET_INFORMATION, * LPSOCKET_INFORMATION;
 
 /*typedef struct {

@@ -1,28 +1,11 @@
 #include "server_menu.h"
-#include <conio.h>
 
-#ifdef _BIG_ENDIAN
-inline DWORD le_32(DWORD v)
-{
-	return (v>>24)|((v>>8)&0xff00)|((v&0xff00)<<8)|(v<<24);
-}
-inline WORD le_16(WORD v)
-{
-	return (v>>8)|(v<<8);
-}
-#else
-#define le_32(v) (v)
-#define le_16(v) (v)
-#endif
 
 /* handle to form */
 HWND ghwnd;
 LPSOCKET_INFORMATION server_SocketInfo;
 
 u_long  lTTL               = TIMECAST_TTL;
-u_short nInterval          = TIMECAST_INTRVL;
-SYSTEMTIME stSysTime;
-
 
 BASS_CHANNELINFO info;
 WAVEFORMATEX wf;
@@ -115,92 +98,40 @@ void run_server()
 {
 	int nRet2;
 	DWORD Flags = 0;
+	char streamDataBuffer[1024];
 
 	if((server_SocketInfo->Overlapped.hEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
 		WSACleanup();
 		return;
 	}
+	while(1)
+	{
+		if(BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING ){
+			DWORD readLength =	BASS_ChannelGetData(chan, streamDataBuffer, 1024);
+			server_SocketInfo->DataBuf.buf = (CHAR*)streamDataBuffer;
+			server_SocketInfo->DataBuf.len = readLength;
 
-	while(1){
-		if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)(char *)&stSysTime, sizeof(stSysTime), NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
-			if (WSAGetLastError() != WSA_IO_PENDING){
-				//error message
+			if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
+				if (WSAGetLastError() != WSA_IO_PENDING){
+					//error message
+				}
 			}
+			WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
+			WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
 		}
-		WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
-		WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
-
-		Sleep(nInterval*1000);
 	}
+
 }
 
 void play(char *filename)
 {
 	if (filename!=NULL)
 	{
-		chan = BASS_StreamCreateFile(FALSE,filename,0,0,BASS_SAMPLE_MONO);
+		chan = BASS_StreamCreateFile(FALSE,filename,0,0,BASS_STREAM_DECODE);
 
 		BASS_ChannelPlay(chan, FALSE);
 
-		int nRet2;
-		int q;
-		DWORD Flags = 0;
-		if (server_SocketInfo != NULL){
-			if((server_SocketInfo->Overlapped.hEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
-				WSACleanup();
-				return;
-			}
-
-			BASS_ChannelGetInfo(chan,&info);
-			wf.wFormatTag=1;
-			wf.nChannels=info.chans;
-			wf.wBitsPerSample=(info.flags&BASS_SAMPLE_8BITS?8:16);
-			wf.nBlockAlign=wf.nChannels*wf.wBitsPerSample/8;
-			wf.nSamplesPerSec=info.freq;
-			wf.nAvgBytesPerSec=wf.nSamplesPerSec*wf.nBlockAlign;
-
-			memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
-
-			strcpy(server_SocketInfo->Buffer, "RIFF\0\0\0\0WAVEfmt \20\0\0\0");
-			strcat(server_SocketInfo->Buffer, (char *)&wf);
-			strcat(server_SocketInfo->Buffer, "data\0\0\0\0");
-
-			server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
-			server_SocketInfo->DataBuf.len = sizeof(server_SocketInfo->Buffer);
-
-			if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
-				if (WSAGetLastError() != WSA_IO_PENDING){
-					//error message
-					q = WSAGetLastError();
-					q = 0;
-				}
-			}
-			WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
-			WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
-
-			while(1)
-			{
-				while (!_kbhit() && (BASS_ChannelIsActive(chan) == BASS_ACTIVE_PLAYING)) 
-				{
-					memset(server_SocketInfo->Buffer, 0, sizeof(server_SocketInfo->Buffer));
-					int c = BASS_ChannelGetData(chan,buf,1024);
-					strcpy(server_SocketInfo->Buffer, (char *)&buf);
-
-					server_SocketInfo->DataBuf.buf = server_SocketInfo->Buffer;
-					server_SocketInfo->DataBuf.len = c;
-
-					if (WSASendTo(server_SocketInfo->Socket, (LPWSABUF)&server_SocketInfo->DataBuf, 1, NULL, Flags, (struct sockaddr*)&(server_SocketInfo->DestAddr), sizeof(server_SocketInfo->DestAddr) , &(server_SocketInfo->Overlapped), NULL) == SOCKET_ERROR){
-						if (WSAGetLastError() != WSA_IO_PENDING){
-							//error message
-							q = WSAGetLastError();
-							q = 0;
-						}
-					}
-					WSAWaitForMultipleEvents(1, &(server_SocketInfo->Overlapped.hEvent), TRUE, WSA_INFINITE, TRUE);
-					WSAResetEvent(server_SocketInfo->Overlapped.hEvent);
-				}
-			}
-		}
+		
 	}else
 		BASS_ChannelPlay(chan, FALSE);
 }

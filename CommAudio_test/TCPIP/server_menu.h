@@ -34,7 +34,7 @@ namespace TCPIP {
 		server_menu(void)
 		{
 			InitializeComponent();
-			if (!BASS_Init(-1,44100,BASS_SAMPLE_MONO,hwnd,NULL))
+			if (!BASS_Init(-1,44100, 0,hwnd,NULL))
 			{
 				MessageBox::Show("Can't initialize device");
 				return;
@@ -347,7 +347,7 @@ namespace TCPIP {
 				 }*/
 
 				 init_server(port);
-				 //run_server();
+				 run_server();
 			 }
 	private: System::Void CloseButton_Click(System::Object^  sender, System::EventArgs^  e) 
 			 {
